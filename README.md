@@ -70,6 +70,23 @@ Then open <http://localhost:8080>, choose **Server Bluetooth** and press **Scan*
 
 Command-line options: `--host`, `--port`, `--data-dir`, `--ssl-certfile`, `--ssl-keyfile`, `--env-file`, `--init` (writes a commented `.env`) and `--version`.
 
+The page asks for a login: **`admin` / `patatuelas`** unless you change it in `.env` (see [Configuration](#configuration)).
+
+### Docker
+
+```bash
+git clone https://github.com/<YOUR USER>/epaper-studio
+cd epaper-studio
+cp .env.example .env          # edit it: at least AUTH_PASSWORD
+docker compose up -d --build
+```
+
+Open <http://localhost:8080> (or the `HOST`/`PORT` you set in `.env`). Logs: `docker compose logs -f`. Update: `git pull && docker compose up -d --build`.
+
+- **Settings** come from the same `.env`. `HOST` and `PORT` choose where the container is published on the host; inside it always listens on 8080. `DATA_DIR` is ignored: data lives in the `./data` folder next to `docker-compose.yml` (tag names, saved designs and the login secret), created on first start. Back it up by copying that folder, or use **Export** under *Saved designs*. On Linux the files belong to root because the container runs as root.
+- **Server Bluetooth** works through the host's BlueZ: the compose file mounts `/run/dbus` read-only, so the host needs `bluetoothd` running and the container runs as root to use it. This only works on a Linux host; Docker Desktop on Windows/macOS can't reach the host's Bluetooth, so use **This device** there. If the scan says the BlueZ service can't be found, uncomment `security_opt: apparmor:unconfined` in `docker-compose.yml` (AppArmor on Ubuntu/Debian).
+- **HTTPS**: put `cert.pem` and `key.pem` in `./certs`, uncomment the `./certs:/certs:ro` line in `docker-compose.yml`, and set `SSL_CERTFILE=/certs/cert.pem` and `SSL_KEYFILE=/certs/key.pem` in `.env`.
+
 ### HTTPS (needed for “This device” from a phone)
 
 Browsers only allow Web Bluetooth on secure pages. `http://localhost` counts as secure, but `http://192.168.1.20:8080` on your phone does not, and the **This device** option will say so. Pick one:
@@ -96,7 +113,7 @@ Settings come from environment variables or a `.env` file in the working directo
 |---|---|---|
 | `HOST` | `0.0.0.0` | Address to listen on. Use `127.0.0.1` to allow only this machine. |
 | `PORT` | `8080` | HTTP port. |
-| `AUTH_USERNAME`, `AUTH_PASSWORD` | `admin`, `patatuelas` | Login for the web page. **Change the password.** |
+| `AUTH_USERNAME`, `AUTH_PASSWORD` | `admin`, `patatuelas` | Login for the web page. **Change the password.** An empty `AUTH_PASSWORD=` turns the login off. |
 | `SESSION_DAYS` | `30` | How long a login lasts; it renews itself while the page is in use. |
 | `SECRET_KEY` | *(generated)* | Signs the login cookie. Empty: a random key is created in `DATA_DIR/secret.key`. |
 | `TAG_ADDRESS` | *(empty)* | MAC of the tag preselected when the page opens. |
@@ -142,10 +159,12 @@ src/epaper_studio/
 ├── gicisky/              model table, packing, BLE protocol, scanner (no HTTP)
 └── web/
     ├── app.py            FastAPI routes
+    ├── auth.py           login: signed session cookie
     ├── schemas.py, store.py
     └── static/           the UI: index.html, css/, js/ (ES modules), locales/
                           js/webble.js speaks the protocol from the browser
 tests/                    pytest suite, simulated tag, reference digests
+Dockerfile, docker-compose.yml   container image and compose setup
 ```
 
 Layers only depend downwards: `web` → `service` → `imaging` / `gicisky`. The backend never sends sentences to the UI, only codes such as `{"code": "tag_not_seen", "params": {"seconds": 25}}`; the UI translates them.
@@ -159,7 +178,7 @@ Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image bo
 | Message | What to check |
 |---|---|
 | *bleak library is not installed* | You are running outside the project's environment. Use `uv run epaper-studio`. |
-| *Bluetooth service (BlueZ/D-Bus) not found* | `systemctl status bluetooth`. In containers, D-Bus and the adapter must be reachable. |
+| *Bluetooth service (BlueZ/D-Bus) not found* | `systemctl status bluetooth`. With Docker: the host must be Linux, `/run/dbus` mounted (it is in the compose file) and, on Ubuntu/Debian, try `security_opt: apparmor:unconfined`. |
 | *adapter is powered off or blocked* | `rfkill list` → `rfkill unblock bluetooth`, then `bluetoothctl power on`. |
 | *The tag was not seen* | The tag only advertises every few seconds. Move it closer and retry; make sure the phone app isn't connected to it. |
 | Transfers stop halfway | Set `BLE_WRITE_DELAY_MS=30`. |
@@ -172,7 +191,7 @@ Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image bo
 
 ## Security
 
-The page and the API ask for a username and password (`AUTH_USERNAME` / `AUTH_PASSWORD`, default `admin` / `patatuelas`: **change it**). The login is kept in a signed, HttpOnly cookie for `SESSION_DAYS`, so you stay signed in across browser restarts; changing the password or `SECRET_KEY` signs everyone out. Without HTTPS the password and the cookie travel in clear text over your network, so keep it on your LAN (or behind an HTTPS reverse proxy) and never expose it directly to the internet. Don't commit your `.env`.
+The page and the API ask for a username and password (`AUTH_USERNAME` / `AUTH_PASSWORD`, default `admin` / `patatuelas`: **change it**). The login is kept in a signed, HttpOnly cookie for `SESSION_DAYS`, so you stay signed in across browser restarts; changing the password or `SECRET_KEY` signs everyone out. Setting `AUTH_PASSWORD=` (empty) turns the login off, for when the port is only reachable from this machine or something in front already handles access. Without HTTPS the password and the cookie travel in clear text over your network, so keep it on your LAN (or behind an HTTPS reverse proxy) and never expose it directly to the internet. Don't commit your `.env`.
 
 ## Development
 

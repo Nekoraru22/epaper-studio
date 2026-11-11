@@ -66,6 +66,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "version": __version__,
             "tag_address": settings.tag_address,
             "https": settings.https,
+            "auth": settings.auth_enabled,
             "persistent": settings.data_dir is not None,
             "ble_error": problem.to_dict() if problem else None,
             "models": {f"0x{k:04X}": {"name": m.name, "width": m.width, "height": m.height,

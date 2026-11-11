@@ -1,0 +1,39 @@
+# E-Paper Studio with Docker Compose.
+#
+#   cp .env.example .env      # then change AUTH_PASSWORD
+#   docker compose up -d --build
+#
+# Settings come from .env (the same file used without Docker). HOST and PORT
+# there choose where it is published on the host; inside the container it
+# always listens on 8080.
+
+services:
+  epaper-studio:
+    build: .
+    image: epaper-studio:latest
+    container_name: epaper-studio
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Fixed inside the container; change the published port with HOST/PORT in .env.
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATA_DIR: /data
+    ports:
+      - "${HOST:-0.0.0.0}:${PORT:-8080}:8080"
+    volumes:
+      # Tag names, saved designs and the login secret, in ./data next to this file.
+      - ./data:/data
+      # "Server Bluetooth": talk to the host's bluetoothd over D-Bus.
+      # Not needed if you only use "This device" (the browser's Bluetooth).
+      - /run/dbus:/run/dbus:ro
+      # HTTPS: put cert.pem and key.pem in ./certs and set in .env
+      #   SSL_CERTFILE=/certs/cert.pem
+      #   SSL_KEYFILE=/certs/key.pem
+      # - ./certs:/certs:ro
+    # Uncomment if "Server Bluetooth" reports that the BlueZ service cannot be
+    # reached (AppArmor on Ubuntu/Debian may block D-Bus from containers).
+    # security_opt:
+    #   - apparmor:unconfined

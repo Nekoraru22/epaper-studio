@@ -7,7 +7,8 @@ changing the password or the secret signs everyone out.
 
 Every request goes through :func:`install`'s middleware: API calls without a
 valid session get ``401`` with code ``auth_required``; pages redirect to
-``/login``.
+``/login``. With an empty ``AUTH_PASSWORD`` the login is turned off: no
+middleware is installed and ``/login`` just leads to the app.
 """
 
 from __future__ import annotations
@@ -111,7 +112,10 @@ def _safe_next(target: str | None) -> str:
     return target
 
 
-def install(app: FastAPI, settings: Settings) -> Sessions:
+def install(app: FastAPI, settings: Settings) -> Sessions | None:
+    if not settings.auth_enabled:
+        _install_open(app)
+        return None
     sessions = Sessions(settings)
 
     @app.middleware("http")
@@ -162,6 +166,26 @@ def install(app: FastAPI, settings: Settings) -> Sessions:
     @app.get("/api/session")
     def session(request: Request) -> dict[str, object]:
         left = sessions.verify(request.cookies.get(COOKIE))
-        return {"authenticated": left is not None, "username": sessions.username if left else None}
+        return {"authenticated": left is not None, "username": sessions.username if left else None, "auth": True}
 
     return sessions
+
+
+def _install_open(app: FastAPI) -> None:
+    """No password configured: everything is reachable, the login routes become no-ops."""
+
+    @app.get("/login", include_in_schema=False)
+    def login_page(request: Request) -> Response:
+        return RedirectResponse(_safe_next(request.query_params.get("next")), status_code=303)
+
+    @app.post("/api/login")
+    def login() -> dict[str, object]:
+        return {"ok": True, "next": "/"}
+
+    @app.post("/api/logout")
+    def logout() -> dict[str, object]:
+        return {"ok": True}
+
+    @app.get("/api/session")
+    def session() -> dict[str, object]:
+        return {"authenticated": True, "username": None, "auth": False}

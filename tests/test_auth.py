@@ -40,7 +40,7 @@ def test_login_session_and_logout(client: TestClient) -> None:
     assert "httponly" in cookie
     assert "max-age=2592000" in cookie  # 30 days: the session survives closing the browser
     assert client.get("/api/designs").status_code == 200
-    assert client.get("/api/session").json() == {"authenticated": True, "username": "admin"}
+    assert client.get("/api/session").json() == {"authenticated": True, "username": "admin", "auth": True}
 
     client.post("/api/logout")
     assert client.get("/api/designs").status_code == 401
@@ -71,3 +71,16 @@ def test_tokens_are_signed_and_expire(tmp_path: Path) -> None:
 def test_env_example_matches_template() -> None:
     example = Path(__file__).parent.parent / ".env.example"
     assert example.read_text(encoding="utf-8") == ENV_TEMPLATE, "regenerate .env.example from config.ENV_TEMPLATE"
+
+
+def test_empty_password_turns_login_off(tmp_path: Path) -> None:
+    env = tmp_path / ".env"
+    env.write_text("AUTH_PASSWORD=\n")
+    s = Settings.load(env, environ={})
+    assert not s.auth_enabled
+    assert Settings.load(tmp_path / "missing", environ={}).auth_password == "patatuelas"  # absent: default
+    with TestClient(create_app(s)) as c:
+        assert c.get("/api/designs").status_code == 200
+        assert c.get("/", follow_redirects=False).status_code == 200
+        assert c.get("/login", follow_redirects=False).headers["location"] == "/"
+        assert c.get("/api/config").json()["auth"] is False

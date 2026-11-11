@@ -18,6 +18,7 @@ HOST=0.0.0.0
 PORT=8080
 
 # Login for the web page. CHANGE THE PASSWORD: the default is admin / patatuelas.
+# Leave AUTH_PASSWORD empty (AUTH_PASSWORD=) to turn the login off entirely.
 AUTH_USERNAME=admin
 AUTH_PASSWORD=patatuelas
 
@@ -88,6 +89,11 @@ class Settings:
     secret_key: str = ""  # empty: generated, kept in data_dir/secret.key
 
     @property
+    def auth_enabled(self) -> bool:
+        """An empty password turns the login off."""
+        return bool(self.auth_password)
+
+    @property
     def https(self) -> bool:
         return bool(self.ssl_certfile and self.ssl_keyfile)
 
@@ -100,6 +106,12 @@ class Settings:
         def get(name: str, default: str) -> str:
             return env.get(name) or file_values.get(name) or default
 
+        def get_allow_empty(name: str, default: str) -> str:
+            """Like ``get``, but a variable that is present and empty means "empty", not "default"."""
+            if name in env:
+                return env[name]
+            return file_values.get(name, default)
+
         return cls(
             host=get("HOST", cls.host),
             port=int(get("PORT", str(cls.port))),
@@ -109,7 +121,7 @@ class Settings:
             ssl_certfile=get("SSL_CERTFILE", ""),
             ssl_keyfile=get("SSL_KEYFILE", ""),
             auth_username=get("AUTH_USERNAME", cls.auth_username),
-            auth_password=get("AUTH_PASSWORD", cls.auth_password),
+            auth_password=get_allow_empty("AUTH_PASSWORD", cls.auth_password),
             session_days=float(get("SESSION_DAYS", str(cls.session_days))),
             secret_key=get("SECRET_KEY", ""),
         )

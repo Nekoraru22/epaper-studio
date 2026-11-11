@@ -16,3 +16,6 @@ dist/
 .idea/
 .vscode/
 .DS_Store
+
+# Docker data folder (tag names, designs, login secret)
+data/

@@ -120,6 +120,7 @@ async function boot() {
   try {
     const cfg = await api.config();
     S.bleError = cfg.ble_error;
+    $("#logout").classList.toggle("hidden", !cfg.auth);
     S.models = cfg.models;
     await Promise.all([loadDevices(), loadDesigns()]);
     setSource(store.get("source", "server") === "web" ? "web" : "server");

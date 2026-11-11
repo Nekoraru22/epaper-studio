@@ -66,7 +66,10 @@ def main(argv: list[str] | None = None) -> int:
         print("HTTPS:     off (\"This device\" Bluetooth only works on localhost; see README)")
     if settings.tag_address:
         print(f"Tag:       {settings.tag_address}")
-    print(f"Login:     {settings.auth_username}")
+    if not settings.auth_enabled:
+        print("Login:     off (AUTH_PASSWORD is empty): anyone who can reach the port can use it")
+    else:
+        print(f"Login:     {settings.auth_username}")
     if settings.auth_password == Settings.auth_password:
         print("WARNING:   the default password is in use; set AUTH_PASSWORD in .env")
     tls = {"ssl_certfile": settings.ssl_certfile, "ssl_keyfile": settings.ssl_keyfile} if settings.https else {}
