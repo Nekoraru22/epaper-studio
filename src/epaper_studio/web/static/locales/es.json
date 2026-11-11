@@ -230,5 +230,17 @@
   "error.design_limit": "Puedes guardar hasta {limit} diseños; borra alguno antes",
   "error.web_cancelled": "No se eligió ninguna etiqueta",
   "error.web_mtu": "El Bluetooth de este dispositivo no puede enviar bloques de 244 bytes: {detail}",
-  "error.web_generic": "Error de Bluetooth en este dispositivo: {detail}"
+  "error.web_generic": "Error de Bluetooth en este dispositivo: {detail}",
+  "designs.export": "Exportar",
+  "designs.import": "Importar",
+  "designs.import_title": "Importar diseños",
+  "designs.import_text": "Combinar conserva tus diseños y sobrescribe los que tengan el mismo nombre. Reemplazar todo borra antes todos los diseños guardados.",
+  "designs.import_text_empty": "Se añadirán los diseños del archivo.",
+  "designs.import_merge": "Combinar",
+  "designs.import_replace": "Reemplazar todo",
+  "designs.confirm_replace": "¿Borrar los {count} diseños guardados y sustituirlos por los del archivo? No se puede deshacer.",
+  "status.importing": "Importando diseños…",
+  "status.imported": "Importados: {added} nuevos, {replaced} sobrescritos",
+  "error.backup_invalid": "Ese archivo no es una copia de diseños válida de E-Paper Studio",
+  "error.backup_version": "Esa copia se hizo con una versión más reciente de E-Paper Studio"
 }

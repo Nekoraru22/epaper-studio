@@ -11,8 +11,9 @@ import base64
 import hashlib
 import io
 import json
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
@@ -32,6 +33,7 @@ from epaper_studio.web.store import ImageStore, JobRegistry
 
 STATIC_DIR = Path(__file__).parent / "static"
 MAX_UPLOAD = 40 * 1024 * 1024
+MAX_BACKUP = 500 * 1024 * 1024
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -135,6 +137,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return library.update_design(design_id, name=body.name,
                                      params=params.model_dump() if params is not None else None,
                                      source=source, preview=preview)
+
+    @app.get("/api/designs/export")
+    def export_designs() -> Response:
+        """Download every saved design as one zip, to restore later or elsewhere."""
+        stamp = time.strftime("%Y%m%d-%H%M")
+        return Response(
+            library.export_designs(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="epaper-studio-designs-{stamp}.zip"'},
+        )
+
+    @app.post("/api/designs/import")
+    async def import_designs(request: Request, mode: Literal["merge", "replace"] = "merge") -> dict[str, Any]:
+        """Restore a backup. ``replace`` deletes all designs first; ``merge`` overwrites same-name ones."""
+        raw = await request.body()
+        if not raw:
+            raise StudioError("backup_invalid", "No file received")
+        if len(raw) > MAX_BACKUP:
+            raise StudioError("image_too_large", "The file is too large", status=413, limit_mb=MAX_BACKUP >> 20)
+        result = await asyncio.to_thread(library.import_designs, raw, mode, lambda p: Params(**p).model_dump())
+        return {**result, "designs": library.designs()}
 
     @app.delete("/api/designs/{design_id}")
     def delete_design(design_id: str) -> dict[str, Any]:

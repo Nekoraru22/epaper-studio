@@ -56,7 +56,8 @@ def test_short_uuid() -> None:
 
 
 def test_ble_error_bleak_not_available() -> None:
-    from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason as R
+    from bleak.exc import BleakBluetoothNotAvailableError
+    from bleak.exc import BleakBluetoothNotAvailableReason as R
 
     err, retry = ble_error(BleakBluetoothNotAvailableError("No Bluetooth adapter found", R.NO_BLUETOOTH))
     assert err.code == "ble_no_adapter" and not retry

@@ -33,6 +33,10 @@ export function renderDesigns() {
   update.classList.toggle("hidden", !S.design || !S.id);
   if (S.design) update.title = t("designs.update_title", { name: S.design.name });
 
+  const exp = $("#dexport");
+  exp.classList.toggle("off", !S.designs.length);
+  exp.setAttribute("aria-disabled", String(!S.designs.length));
+
   const host = $("#designs");
   host.innerHTML = "";
   if (!S.designs.length) {
@@ -162,5 +166,41 @@ async function remove(d) {
     renderDesigns();
   } catch (err) {
     flashError(err);
+  }
+}
+
+/** Ask how to import: resolves to "merge", "replace" or null (cancelled). */
+function askImportMode() {
+  const dlg = $("#importdialog");
+  $("#importtext").textContent = t(S.designs.length ? "designs.import_text" : "designs.import_text_empty");
+  dlg.querySelector('[value="replace"]').classList.toggle("hidden", !S.designs.length);
+  return new Promise((resolve) => {
+    for (const b of dlg.querySelectorAll("button[value]")) {
+      b.onclick = () => { dlg.close(); resolve(b.value || null); };
+    }
+    dlg.oncancel = () => resolve(null);
+    dlg.showModal();
+  });
+}
+
+/** Restore designs from a backup zip chosen by the user. */
+export async function importFile(file) {
+  if (!file) return;
+  const mode = await askImportMode();
+  if (!mode) return;
+  if (mode === "replace" && !confirm(t("designs.confirm_replace", { count: S.designs.length }))) return;
+  const btn = $("#dimport");
+  btn.disabled = true;
+  flash("status.importing", "busy");
+  try {
+    const res = await api.importDesigns(file, mode);
+    S.designs = res.designs;
+    if (S.design && !S.designs.some((d) => d.id === S.design.id)) S.design = null;
+    renderDesigns();
+    flash("status.imported", "ok", { added: res.added, replaced: res.replaced });
+  } catch (err) {
+    flashError(err);
+  } finally {
+    btn.disabled = false;
   }
 }

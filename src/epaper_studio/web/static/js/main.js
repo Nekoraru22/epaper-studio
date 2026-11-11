@@ -2,7 +2,7 @@
 
 import { api } from "./api.js";
 import { buildControls, buildPresets, syncControls } from "./controls.js";
-import { loadDesigns, renderDesigns, saveNew, updateCurrent } from "./designs.js";
+import { importFile, loadDesigns, renderDesigns, saveNew, updateCurrent } from "./designs.js";
 import { describe, findTags, loadDevices, pickTag, renderTags, setMessage, setSource } from "./devices.js";
 import { $, $$ } from "./dom.js";
 import { drawDump, wireDump } from "./dump.js";
@@ -50,6 +50,12 @@ function wire() {
   for (const b of $$("#source-seg button")) b.onclick = () => setSource(b.dataset.src);
   $("#dsave").onclick = saveNew;
   $("#dupdate").onclick = updateCurrent;
+  $("#dimport").onclick = () => $("#dimportfile").click();
+  $("#dimportfile").onchange = (ev) => {
+    const file = ev.target.files[0];
+    ev.target.value = ""; // allow picking the same file again
+    importFile(file);
+  };
   $("#xclose").onclick = () => { $("#xfer").classList.add("hidden"); updateStick(); };
 
   for (const b of $$("#view button")) {

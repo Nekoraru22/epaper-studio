@@ -23,6 +23,8 @@ import tempfile
 import threading
 import time
 import uuid
+import zipfile
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -34,6 +36,10 @@ from epaper_studio.errors import StudioError
 Transport = Literal["server", "web"]
 THUMB_WIDTH = 320
 DESIGN_LIMIT = 500
+BACKUP_FORMAT = "epaper-studio-designs"
+BACKUP_MANIFEST = "epaper-studio.json"
+BACKUP_MAX_PNG = 40 * 1024 * 1024  # per image, uncompressed
+ImportMode = Literal["merge", "replace"]
 
 
 def device_key(transport: str, address: str) -> str:
@@ -215,6 +221,57 @@ class Library:
                 return getattr(self._designs[design_id], part)
             return (self._dir(design_id) / f"{part}.png").read_bytes()
 
+    # -- backup ----------------------------------------------------------------
+    def export_designs(self) -> bytes:
+        """Every saved design as one zip: a JSON manifest plus each design's PNGs."""
+        with self._lock:
+            metas = self.designs()
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                doc = {"format": BACKUP_FORMAT, "version": 1, "exported": int(time.time()), "designs": metas}
+                zf.writestr(BACKUP_MANIFEST, json.dumps(doc, indent=2, ensure_ascii=False))
+                for m in metas:
+                    # PNGs are already compressed: store them as they are.
+                    zf.writestr(f"designs/{m['id']}/source.png", self._read(m["id"], "source"), zipfile.ZIP_STORED)
+                    zf.writestr(f"designs/{m['id']}/thumb.png", self._read(m["id"], "thumb"), zipfile.ZIP_STORED)
+            return buf.getvalue()
+
+    def import_designs(
+        self,
+        raw: bytes,
+        mode: ImportMode = "merge",
+        check_params: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    ) -> dict[str, int]:
+        """Restore a zip made by :meth:`export_designs`.
+
+        ``replace`` deletes every saved design first. ``merge`` keeps them, and a
+        design whose name matches an existing one (ignoring case) overwrites it.
+        The whole file is validated before anything is changed.
+        """
+        incoming = _read_backup(raw, check_params)
+        with self._lock:
+            current = [] if mode == "replace" else self.designs()
+            by_name = {m["name"].casefold(): m for m in current}
+            new_count = sum(1 for meta, _, _ in incoming if meta["name"].casefold() not in by_name)
+            if len(current) + new_count > DESIGN_LIMIT:
+                raise StudioError("design_limit", "Too many saved designs", status=409, limit=DESIGN_LIMIT)
+            if mode == "replace":
+                for m in self.designs():
+                    self.delete_design(m["id"])
+            added = replaced = 0
+            now = int(time.time())
+            for meta, source, thumb in incoming:
+                old = by_name.get(meta["name"].casefold())
+                if old is not None:
+                    meta = {**meta, "id": old["id"], "created": old["created"], "updated": now}
+                    replaced += 1
+                else:
+                    meta = {**meta, "id": uuid.uuid4().hex[:12]}
+                    by_name[meta["name"].casefold()] = meta
+                    added += 1
+                self._write_design(meta, source, thumb)
+            return {"added": added, "replaced": replaced}
+
     def _write_design(self, meta: dict[str, Any], source: bytes | None, thumb: bytes | None) -> None:
         if self.data_dir is None:
             old = self._designs.get(meta["id"])
@@ -227,3 +284,79 @@ class Library:
         if thumb is not None:
             _atomic_write(folder / "thumb.png", thumb)
         _atomic_write(folder / "meta.json", json.dumps(meta, indent=2, ensure_ascii=False).encode())
+
+
+def _png_size(data: bytes) -> tuple[int, int]:
+    try:
+        with Image.open(io.BytesIO(data)) as img:
+            if img.format != "PNG":
+                raise ValueError("not a PNG")
+            img.verify()
+            return img.size
+    except Exception as exc:  # noqa: BLE001 - any decoding failure means a bad file
+        raise StudioError("backup_invalid", "The backup contains a damaged image") from exc
+
+
+def _read_backup(
+    raw: bytes, check_params: Callable[[dict[str, Any]], dict[str, Any]] | None
+) -> list[tuple[dict[str, Any], bytes, bytes]]:
+    """Parse and validate a backup zip into (meta, source PNG, thumb PNG) tuples."""
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(raw))
+    except zipfile.BadZipFile as exc:
+        raise StudioError("backup_invalid", "Not a backup file") from exc
+    with zf:
+
+        def member(name: str) -> bytes:
+            try:
+                info = zf.getinfo(name)
+            except KeyError as exc:
+                raise StudioError("backup_invalid", f"Missing {name}") from exc
+            if info.file_size > BACKUP_MAX_PNG:
+                raise StudioError("backup_invalid", f"{name} is too large")
+            return zf.read(info)
+
+        try:
+            doc = json.loads(member(BACKUP_MANIFEST))
+        except ValueError as exc:
+            raise StudioError("backup_invalid", "Damaged manifest") from exc
+        if not isinstance(doc, dict) or doc.get("format") != BACKUP_FORMAT or not isinstance(doc.get("designs"), list):
+            raise StudioError("backup_invalid", "Not an E-Paper Studio backup")
+        if doc.get("version") != 1:
+            raise StudioError("backup_version", "Backup made by a newer version", version=doc.get("version"))
+
+        out: list[tuple[dict[str, Any], bytes, bytes]] = []
+        seen: set[str] = set()
+        now = int(time.time())
+        for item in doc["designs"]:
+            if not isinstance(item, dict) or not str(item.get("id", "")).isalnum():
+                raise StudioError("backup_invalid", "Damaged design entry")
+            params = item.get("params")
+            if not isinstance(params, dict):
+                raise StudioError("backup_invalid", "Damaged design entry")
+            if check_params is not None:
+                try:
+                    params = check_params(params)
+                except Exception as exc:  # noqa: BLE001 - e.g. a pydantic ValidationError
+                    raise StudioError("backup_invalid", "Invalid design settings") from exc
+            name = str(item.get("name", "")).strip()[:60] or "Untitled"
+            if name.casefold() in seen:
+                continue  # the same name twice in one backup: the first one wins
+            seen.add(name.casefold())
+            source = member(f"designs/{item['id']}/source.png")
+            thumb = member(f"designs/{item['id']}/thumb.png")
+            width, height = _png_size(source)
+            _png_size(thumb)
+            created = item["created"] if isinstance(item.get("created"), int) else now
+            updated = item["updated"] if isinstance(item.get("updated"), int) else now
+            meta = {
+                "id": item["id"],
+                "name": name,
+                "params": params,
+                "width": width,
+                "height": height,
+                "created": created,
+                "updated": updated,
+            }
+            out.append((meta, source, thumb))
+        return out

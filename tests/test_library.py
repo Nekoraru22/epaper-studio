@@ -83,3 +83,60 @@ def test_api(tmp_path, photo_png: bytes) -> None:
 
         assert c.get("/api/advert?data=4b1e810140").json()["model_id"] == 0x4B
         assert c.get("/api/advert?data=zz").status_code == 400
+
+
+def _make(library: Library, name: str, colour: str) -> dict:
+    src = Image.new("RGB", (32, 24), colour)
+    return library.create_design(name, {"dither": "none"}, src, Image.new("RGB", (40, 30)))
+
+
+def test_export_import_merge_overwrites_same_name(library: Library) -> None:
+    _make(library, "Door", "red")
+    _make(library, "Desk", "blue")
+    backup = library.export_designs()
+
+    other = Library()
+    kept = _make(other, "door", "green")  # same name, different case: gets overwritten
+    _make(other, "Kitchen", "white")
+    assert other.import_designs(backup, "merge") == {"added": 1, "replaced": 1}
+    names = sorted(d["name"] for d in other.designs())
+    assert names == ["Desk", "Door", "Kitchen"]
+    door = next(d for d in other.designs() if d["name"] == "Door")
+    assert door["id"] == kept["id"]
+    assert other.design_source(door["id"]).getpixel((0, 0)) == (255, 0, 0)
+
+
+def test_import_replace_deletes_everything_first(library: Library) -> None:
+    _make(library, "Door", "red")
+    backup = library.export_designs()
+    other = Library()
+    _make(other, "Kitchen", "white")
+    assert other.import_designs(backup, "replace") == {"added": 1, "replaced": 0}
+    assert [d["name"] for d in other.designs()] == ["Door"]
+
+
+def test_import_rejects_bad_files(library: Library) -> None:
+    _make(library, "Door", "red")
+    with pytest.raises(StudioError) as err:
+        library.import_designs(b"not a zip", "replace")
+    assert err.value.code == "backup_invalid"
+    assert len(library.designs()) == 1  # nothing was deleted
+
+
+def test_backup_api(tmp_path, photo_png: bytes) -> None:
+    from fastapi.testclient import TestClient
+
+    from epaper_studio.config import Settings
+    from epaper_studio.web.app import create_app
+
+    with TestClient(create_app(Settings(data_dir=tmp_path))) as c:
+        image = c.post("/api/image", content=photo_png, headers={"Content-Type": "image/png"}).json()["id"]
+        c.post("/api/designs", json={"image": image, "name": "Logo"})
+        res = c.get("/api/designs/export")
+        assert res.headers["content-type"] == "application/zip"
+        assert "attachment" in res.headers["content-disposition"]
+        out = c.post("/api/designs/import?mode=merge", content=res.content).json()
+        assert out["replaced"] == 1
+        assert len(out["designs"]) == 1
+        bad = c.post("/api/designs/import?mode=merge", content=b"junk")
+        assert bad.json()["detail"]["code"] == "backup_invalid"

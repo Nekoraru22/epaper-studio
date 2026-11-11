@@ -11,7 +11,7 @@ Drop in any image, frame it, tune tone and colour, pick a dithering algorithm an
 - **Accurate preview.** Colour matching in OKLab against the *real* ink colours, gamut mapping so impossible colours (greens on a red panel) don't smear, and 9 dithering algorithms (Floyd–Steinberg, Atkinson, Jarvis-Judice-Ninke, Stucki, Burkes, Sierra, Sierra Lite, Bayer, none).
 - **Two ways to send.** *Server Bluetooth*: the machine running E-Paper Studio talks to the tag through [Bleak](https://github.com/hbldh/bleak). *This device*: the browser talks to the tag itself with Web Bluetooth (Chrome/Edge on Android, Windows, macOS, Linux), so you can walk up to a tag with your phone. Same protocol, same live log of every packet, automatic retries.
 - **Organised tags.** Give each tag a name and a group ("Kitchen", "Office"); they are remembered on the server and shown grouped.
-- **Saved designs.** Keep an image together with all its adjustments, reopen it to tweak, or resend it in one tap.
+- **Saved designs.** Keep an image together with all its adjustments, reopen it to tweak, or resend it in one tap. Export them all to a `.zip` and import them back (merge, overwriting same-name designs, or replace all).
 - **Works on phones.** Touch-friendly layout, pinch to zoom, drag to frame.
 - **See the bytes.** The *Data* view shows the exact buffer that will be uploaded, one panel row per line, with a tooltip that decodes any byte back into pixels.
 - **Explained.** The bottom of the page walks through the whole journey — pixels → bit planes → BLE packets → refresh — using the numbers of *your* image.
@@ -149,7 +149,7 @@ Layers only depend downwards: `web` → `service` → `imaging` / `gicisky`. The
 
 ### HTTP API
 
-Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image body) → `{id}`; `POST /api/render` → PNG preview (stats in the `X-Stats` header); `POST /api/packed` → the exact upload buffer; `GET /api/scan`; `POST /api/send` → `{job}`; `GET /api/jobs/{id}?since=n` to follow an upload; `GET|POST /api/devices`, `DELETE /api/devices/{key}` for named tags; `GET|POST /api/designs`, `PATCH|DELETE /api/designs/{id}`, `POST /api/designs/{id}/open` for saved designs.
+Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image body) → `{id}`; `POST /api/render` → PNG preview (stats in the `X-Stats` header); `POST /api/packed` → the exact upload buffer; `GET /api/scan`; `POST /api/send` → `{job}`; `GET /api/jobs/{id}?since=n` to follow an upload; `GET|POST /api/devices`, `DELETE /api/devices/{key}` for named tags; `GET|POST /api/designs`, `PATCH|DELETE /api/designs/{id}`, `POST /api/designs/{id}/open` for saved designs; `GET /api/designs/export` (zip) and `POST /api/designs/import?mode=merge|replace` (zip body) to back them up.
 
 ## Troubleshooting
 

@@ -230,5 +230,17 @@
   "error.design_limit": "You can keep up to {limit} designs; delete some first",
   "error.web_cancelled": "No tag was chosen",
   "error.web_mtu": "This device's Bluetooth cannot send 244-byte blocks: {detail}",
-  "error.web_generic": "Bluetooth error on this device: {detail}"
+  "error.web_generic": "Bluetooth error on this device: {detail}",
+  "designs.export": "Export",
+  "designs.import": "Import",
+  "designs.import_title": "Import designs",
+  "designs.import_text": "Merge keeps your designs and overwrites any with the same name. Replace all deletes every saved design first.",
+  "designs.import_text_empty": "The designs in the file will be added.",
+  "designs.import_merge": "Merge",
+  "designs.import_replace": "Replace all",
+  "designs.confirm_replace": "Delete all {count} saved designs and replace them with the file? This cannot be undone.",
+  "status.importing": "Importing designs…",
+  "status.imported": "Imported: {added} new, {replaced} overwritten",
+  "error.backup_invalid": "That file is not a valid E-Paper Studio designs backup",
+  "error.backup_version": "That backup was made by a newer version of E-Paper Studio"
 }

@@ -66,6 +66,9 @@ export const api = {
   updateDesign: async (id, body) => (await call(`/api/designs/${id}`, { method: "PATCH", json: body })).json(),
   deleteDesign: async (id) => (await call(`/api/designs/${id}`, { method: "DELETE" })).json(),
   openDesign: async (id) => (await call(`/api/designs/${id}/open`, { method: "POST" })).json(),
+  importDesigns: async (file, mode) => (await call(`/api/designs/import?mode=${mode}`, {
+    method: "POST", body: file, headers: { "Content-Type": "application/zip" },
+  })).json(),
   thumbUrl: (d) => `/api/designs/${d.id}/thumb.png?v=${d.updated}`,
   sourceUrl: (d) => `/api/designs/${d.id}/source.png?v=${d.updated}`,
 };

@@ -198,7 +198,8 @@ def _exc_text(exc: BaseException) -> str:
 def _not_available(exc: Exception) -> StudioError | None:
     """Map Bleak's ``BleakBluetoothNotAvailableError`` (Bleak >= 2) by its reason."""
     try:
-        from bleak.exc import BleakBluetoothNotAvailableError, BleakBluetoothNotAvailableReason as R
+        from bleak.exc import BleakBluetoothNotAvailableError
+        from bleak.exc import BleakBluetoothNotAvailableReason as R
     except ImportError:
         return None
     if not isinstance(exc, BleakBluetoothNotAvailableError):

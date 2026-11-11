@@ -65,6 +65,11 @@
         <button class="link hidden" id="dupdate" type="button" data-i18n="designs.update">Update</button>
         <button class="link" id="dsave" type="button" disabled data-i18n="designs.save">Save</button></h2>
       <div class="designs" id="designs"></div>
+      <div class="dtools">
+        <a class="link" id="dexport" href="/api/designs/export" download data-i18n="designs.export">Export</a>
+        <button class="link" id="dimport" type="button" data-i18n="designs.import">Import</button>
+        <input type="file" id="dimportfile" accept=".zip,application/zip" class="hidden">
+      </div>
     </div>
 
     <div>
@@ -165,6 +170,20 @@
       <span class="grow"></span>
       <button type="button" class="btn" data-close data-i18n="dialog.cancel">Cancel</button>
       <button type="submit" class="btn accent" data-i18n="dialog.save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Importing a designs backup: merge or replace -->
+<dialog id="importdialog" class="dlg">
+  <form method="dialog">
+    <h3 data-i18n="designs.import_title">Import designs</h3>
+    <p id="importtext"></p>
+    <div class="dlgbar">
+      <button type="button" class="btn danger" value="replace" data-i18n="designs.import_replace">Replace all</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" value="" data-i18n="dialog.cancel">Cancel</button>
+      <button type="button" class="btn accent" value="merge" data-i18n="designs.import_merge">Merge</button>
     </div>
   </form>
 </dialog>
