@@ -57,3 +57,9 @@ def fake_ble(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(protocol, "asyncio", FastAsyncio())
     return fake_tag
+
+
+def login(client) -> None:
+    """Sign a TestClient in with the default credentials; the cookie stays on the client."""
+    res = client.post("/api/login", json={"username": "admin", "password": "patatuelas"})
+    assert res.status_code == 200, res.text

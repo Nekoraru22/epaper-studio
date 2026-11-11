@@ -28,6 +28,7 @@ from epaper_studio.gicisky.scanner import ble_problem, scan
 from epaper_studio.imaging import INK, PURE, Params
 from epaper_studio.library import Library
 from epaper_studio.service import fit_params_to_model, prepare_label
+from epaper_studio.web import auth
 from epaper_studio.web.schemas import DesignCreate, DesignUpdate, DeviceRequest, RenderRequest, SendRequest
 from epaper_studio.web.store import ImageStore, JobRegistry
 
@@ -49,6 +50,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.exception_handler(StudioError)
     async def studio_error(_request: Request, exc: StudioError) -> JSONResponse:
         return JSONResponse(status_code=exc.status, content={"detail": exc.to_dict()})
+
+    auth.install(app, settings)  # everything below needs a signed-in session
 
     def require_ble() -> None:
         problem = ble_problem()

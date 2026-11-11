@@ -90,12 +90,15 @@ Tag names and groups (`devices.json`) and saved designs (`designs/<id>/` with th
 
 ## Configuration
 
-Settings come from environment variables or a `.env` file in the working directory (environment variables win). Run `epaper-studio --init` to create a commented one.
+Settings come from environment variables or a `.env` file in the working directory (environment variables win). Run `epaper-studio --init` to create a commented one, or copy [`.env.example`](.env.example).
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `HOST` | `0.0.0.0` | Address to listen on. Use `127.0.0.1` to allow only this machine. |
 | `PORT` | `8080` | HTTP port. |
+| `AUTH_USERNAME`, `AUTH_PASSWORD` | `admin`, `patatuelas` | Login for the web page. **Change the password.** |
+| `SESSION_DAYS` | `30` | How long a login lasts; it renews itself while the page is in use. |
+| `SECRET_KEY` | *(generated)* | Signs the login cookie. Empty: a random key is created in `DATA_DIR/secret.key`. |
 | `TAG_ADDRESS` | *(empty)* | MAC of the tag preselected when the page opens. |
 | `BLE_WRITE_DELAY_MS` | `0` | Pause between writes. Raise to 20–50 only if transfers keep dropping. |
 | `DATA_DIR` | `~/.local/share/epaper-studio` | Where tag names and saved designs are kept. |
@@ -149,7 +152,7 @@ Layers only depend downwards: `web` → `service` → `imaging` / `gicisky`. The
 
 ### HTTP API
 
-Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image body) → `{id}`; `POST /api/render` → PNG preview (stats in the `X-Stats` header); `POST /api/packed` → the exact upload buffer; `GET /api/scan`; `POST /api/send` → `{job}`; `GET /api/jobs/{id}?since=n` to follow an upload; `GET|POST /api/devices`, `DELETE /api/devices/{key}` for named tags; `GET|POST /api/designs`, `PATCH|DELETE /api/designs/{id}`, `POST /api/designs/{id}/open` for saved designs; `GET /api/designs/export` (zip) and `POST /api/designs/import?mode=merge|replace` (zip body) to back them up.
+Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image body) → `{id}`; `POST /api/render` → PNG preview (stats in the `X-Stats` header); `POST /api/packed` → the exact upload buffer; `POST /api/login` / `POST /api/logout` (every other endpoint needs the session cookie); `GET /api/scan`; `POST /api/send` → `{job}`; `GET /api/jobs/{id}?since=n` to follow an upload; `GET|POST /api/devices`, `DELETE /api/devices/{key}` for named tags; `GET|POST /api/designs`, `PATCH|DELETE /api/designs/{id}`, `POST /api/designs/{id}/open` for saved designs; `GET /api/designs/export` (zip) and `POST /api/designs/import?mode=merge|replace` (zip body) to back them up.
 
 ## Troubleshooting
 
@@ -169,7 +172,7 @@ Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image bo
 
 ## Security
 
-There is no authentication. Anyone who can reach the port can upload images to your tags, rename them and see or delete your saved designs. Keep it on your LAN or bind it to `127.0.0.1` and put a reverse proxy with auth in front. Never expose it to the internet. Don't commit your `.env`.
+The page and the API ask for a username and password (`AUTH_USERNAME` / `AUTH_PASSWORD`, default `admin` / `patatuelas`: **change it**). The login is kept in a signed, HttpOnly cookie for `SESSION_DAYS`, so you stay signed in across browser restarts; changing the password or `SECRET_KEY` signs everyone out. Without HTTPS the password and the cookie travel in clear text over your network, so keep it on your LAN (or behind an HTTPS reverse proxy) and never expose it directly to the internet. Don't commit your `.env`.
 
 ## Development
 

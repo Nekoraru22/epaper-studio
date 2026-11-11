@@ -50,6 +50,10 @@ function wire() {
   for (const b of $$("#source-seg button")) b.onclick = () => setSource(b.dataset.src);
   $("#dsave").onclick = saveNew;
   $("#dupdate").onclick = updateCurrent;
+  $("#logout").onclick = async () => {
+    try { await api.logout(); } catch (_) { /* go to the login page anyway */ }
+    location.href = "/login";
+  };
   $("#dimport").onclick = () => $("#dimportfile").click();
   $("#dimportfile").onchange = (ev) => {
     const file = ev.target.files[0];

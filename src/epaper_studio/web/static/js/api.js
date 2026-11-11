@@ -36,11 +36,15 @@ async function call(url, { method = "GET", json, body, headers = {}, signal } = 
     if (err.name === "AbortError") throw err;
     throw new ApiError("network", {}, 0, err.message);
   }
+  if (res.status === 401 && !url.startsWith("/api/login")) {
+    location.href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+  }
   if (!res.ok) throw await failure(res);
   return res;
 }
 
 export const api = {
+  logout: async () => (await call("/api/logout", { method: "POST" })).json(),
   config: async () => (await call("/api/config")).json(),
   scan: async (seconds = 6) => (await call(`/api/scan?seconds=${seconds}`)).json(),
   upload: async (file) => (await call("/api/image", {

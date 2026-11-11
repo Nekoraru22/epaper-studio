@@ -242,5 +242,12 @@
   "status.importing": "Importando diseños…",
   "status.imported": "Importados: {added} nuevos, {replaced} sobrescritos",
   "error.backup_invalid": "Ese archivo no es una copia de diseños válida de E-Paper Studio",
-  "error.backup_version": "Esa copia se hizo con una versión más reciente de E-Paper Studio"
+  "error.backup_version": "Esa copia se hizo con una versión más reciente de E-Paper Studio",
+  "header.logout": "Cerrar sesión",
+  "login.title": "Iniciar sesión",
+  "login.username": "Usuario",
+  "login.password": "Contraseña",
+  "login.submit": "Entrar",
+  "error.auth_required": "La sesión ha caducado; vuelve a entrar",
+  "error.bad_credentials": "Usuario o contraseña incorrectos"
 }

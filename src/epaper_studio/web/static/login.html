@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sign in · E-Paper Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 24'%3E%3Crect width='32' height='24' rx='3' fill='%23E8E7DE'/%3E%3Crect x='4' y='4' width='15' height='4' fill='%23222226'/%3E%3Crect x='4' y='11' width='10' height='9' fill='%23BE3232'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  body{min-height:100vh;display:grid;place-items:center;padding:16px}
+  .login{width:min(340px,100%);background:var(--shell);border:1px solid var(--line);border-radius:10px;
+    padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .login .brand{margin:0 0 4px}
+  .login label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dim)}
+  .login input{background:var(--void);border:1px solid var(--line);border-radius:var(--r);padding:9px 10px;
+    font-size:14px;color:var(--text);width:100%}
+  .login input:focus{outline:none;border-color:var(--red)}
+  .login .btn{justify-content:center;padding:9px 12px}
+  .login .err{min-height:1.4em;margin:0;font-size:12px;color:var(--red-lift)}
+</style>
+</head>
+<body>
+<form class="login" id="login" novalidate>
+  <div class="brand"><span class="tag"></span><b>E-Paper Studio</b></div>
+  <label><span data-i18n="login.username">Username</span>
+    <input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus></label>
+  <label><span data-i18n="login.password">Password</span>
+    <input name="password" type="password" autocomplete="current-password" required></label>
+  <p class="err" id="err" role="alert"></p>
+  <button class="btn accent" type="submit" data-i18n="login.submit">Sign in</button>
+</form>
+<script type="module">
+  // Same language rule as the app: the explicit choice saved there, otherwise English.
+  let strings = {};
+  let lang = "en";
+  try { lang = JSON.parse(localStorage.getItem("eps:language")) || "en"; } catch (_) { /* no storage */ }
+  try {
+    strings = await (await fetch(`locales/${lang}.json`)).json();
+  } catch (_) {
+    try { strings = await (await fetch("locales/en.json")).json(); lang = "en"; } catch (_) { /* keep markup text */ }
+  }
+  const t = (k) => strings[k] ?? null;
+  document.documentElement.lang = lang;
+  if (t("login.title")) document.title = `${t("login.title")} · E-Paper Studio`;
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n) ?? el.textContent;
+
+  const form = document.getElementById("login");
+  const err = document.getElementById("err");
+  const next = new URLSearchParams(location.search).get("next") || "/";
+  form.onsubmit = async (ev) => {
+    ev.preventDefault();
+    const btn = form.querySelector("button");
+    btn.disabled = true;
+    err.textContent = "";
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: form.username.value, password: form.password.value, next }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) { location.replace(body.next || "/"); return; }
+      const code = body.detail?.code;
+      err.textContent = t(`error.${code}`) ?? t("error.bad_credentials") ?? "Wrong username or password";
+      form.password.select();
+    } catch (_) {
+      err.textContent = t("error.network") ?? "The server cannot be reached";
+    } finally {
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

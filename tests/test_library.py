@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from conftest import login
 from epaper_studio.config import Settings
 from epaper_studio.errors import StudioError
 from epaper_studio.library import Library, device_key
@@ -61,6 +62,7 @@ def test_design_ids_cannot_escape(tmp_path) -> None:
 
 def test_api(tmp_path, photo_png: bytes) -> None:
     with TestClient(create_app(Settings(data_dir=tmp_path))) as c:
+        login(c)
         dev = c.post("/api/devices", json={"transport": "web", "address": "x/y==", "name": "Desk"}).json()
         assert c.get("/api/devices").json()[0]["name"] == "Desk"
         assert c.delete(f"/api/devices/{dev['key']}").json() == {"ok": True}
@@ -130,6 +132,7 @@ def test_backup_api(tmp_path, photo_png: bytes) -> None:
     from epaper_studio.web.app import create_app
 
     with TestClient(create_app(Settings(data_dir=tmp_path))) as c:
+        login(c)
         image = c.post("/api/image", content=photo_png, headers={"Content-Type": "image/png"}).json()["id"]
         c.post("/api/designs", json={"image": image, "name": "Logo"})
         res = c.get("/api/designs/export")

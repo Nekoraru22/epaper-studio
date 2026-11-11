@@ -4,6 +4,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
+from conftest import login
 from epaper_studio.config import Settings
 from epaper_studio.web.app import create_app
 
@@ -12,6 +13,7 @@ from epaper_studio.web.app import create_app
 def client():
     # The context manager keeps one event loop alive, so background uploads run.
     with TestClient(create_app(Settings(tag_address="AA:BB:CC:00:12:34"))) as c:
+        login(c)
         yield c
 
 

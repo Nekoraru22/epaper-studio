@@ -242,5 +242,12 @@
   "status.importing": "Importing designs…",
   "status.imported": "Imported: {added} new, {replaced} overwritten",
   "error.backup_invalid": "That file is not a valid E-Paper Studio designs backup",
-  "error.backup_version": "That backup was made by a newer version of E-Paper Studio"
+  "error.backup_version": "That backup was made by a newer version of E-Paper Studio",
+  "header.logout": "Sign out",
+  "login.title": "Sign in",
+  "login.username": "Username",
+  "login.password": "Password",
+  "login.submit": "Sign in",
+  "error.auth_required": "Your session has ended; sign in again",
+  "error.bad_credentials": "Wrong username or password"
 }

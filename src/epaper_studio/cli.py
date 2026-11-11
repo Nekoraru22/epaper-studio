@@ -66,6 +66,9 @@ def main(argv: list[str] | None = None) -> int:
         print("HTTPS:     off (\"This device\" Bluetooth only works on localhost; see README)")
     if settings.tag_address:
         print(f"Tag:       {settings.tag_address}")
+    print(f"Login:     {settings.auth_username}")
+    if settings.auth_password == Settings.auth_password:
+        print("WARNING:   the default password is in use; set AUTH_PASSWORD in .env")
     tls = {"ssl_certfile": settings.ssl_certfile, "ssl_keyfile": settings.ssl_keyfile} if settings.https else {}
     uvicorn.run(create_app(settings), host=settings.host, port=settings.port, log_level="warning", **tls)
     return 0

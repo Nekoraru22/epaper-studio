@@ -13,10 +13,20 @@ ENV_TEMPLATE = """\
 # E-Paper Studio configuration. Every setting is optional.
 
 # Where the editor listens. 0.0.0.0 = any device on your network,
-# 127.0.0.1 = this machine only. There is no password: never expose it
-# to the internet.
+# 127.0.0.1 = this machine only. Never expose it directly to the internet.
 HOST=0.0.0.0
 PORT=8080
+
+# Login for the web page. CHANGE THE PASSWORD: the default is admin / patatuelas.
+AUTH_USERNAME=admin
+AUTH_PASSWORD=patatuelas
+
+# How long a login lasts, in days. It is renewed while you keep using the page.
+SESSION_DAYS=30
+
+# Key that signs the login cookie. Leave empty to generate one and keep it in
+# DATA_DIR/secret.key. Changing it (or the password) signs everyone out.
+SECRET_KEY=
 
 # MAC address of the tag selected when the page opens (optional; you can
 # also scan from the UI). It is the one bluetoothctl shows, e.g. AA:BB:CC:DD:EE:FF
@@ -72,6 +82,10 @@ class Settings:
     data_dir: Path | None = None  # None: keep everything in memory (tests)
     ssl_certfile: str = ""
     ssl_keyfile: str = ""
+    auth_username: str = "admin"
+    auth_password: str = "patatuelas"
+    session_days: float = 30.0
+    secret_key: str = ""  # empty: generated, kept in data_dir/secret.key
 
     @property
     def https(self) -> bool:
@@ -94,4 +108,8 @@ class Settings:
             data_dir=Path(get("DATA_DIR", "")).expanduser() if get("DATA_DIR", "") else default_data_dir(env),
             ssl_certfile=get("SSL_CERTFILE", ""),
             ssl_keyfile=get("SSL_KEYFILE", ""),
+            auth_username=get("AUTH_USERNAME", cls.auth_username),
+            auth_password=get("AUTH_PASSWORD", cls.auth_password),
+            session_days=float(get("SESSION_DAYS", str(cls.session_days))),
+            secret_key=get("SECRET_KEY", ""),
         )
