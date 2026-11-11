@@ -314,6 +314,10 @@ input[type=range]{width:100%;margin:0;accent-color:var(--red);height:16px}
   font-size:14px;color:var(--text);width:100%}
 .dlg input:focus,.dlg select:focus{outline:none;border-color:var(--red)}
 .dlgbar{display:flex;gap:8px;align-items:center;margin-top:4px}
+.detect{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:-4px}
+.detect span{font-size:12px;color:var(--dim)}
+.detect span.ok{color:var(--good)} .detect span.err{color:#E07272} .detect span.busy{color:var(--warn)}
+.dlg code{font-family:var(--mono);font-size:11px;word-break:break-all;color:var(--text)}
 .dlgbar .grow{flex:1}
 .btn.danger{color:#E58A8A}
 .btn.danger:hover{background:#3A2629}
@@ -339,4 +343,21 @@ input[type=range]{width:100%;margin:0;accent-color:var(--red);height:16px}
   .col{padding:16px}
   .designs{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
   .explain .inner{padding-left:16px;padding-right:16px}
+}
+
+/* ---------- phones: preview pinned on top, adjustments right below it ----------
+   Changing a value no longer means scrolling down to the slider and back up to
+   see the result: the tag stays in view while the controls scroll under it.
+   Not on short (landscape) screens, where it would leave no room. Keep the
+   media query in sync with PINNED in js/render.js. */
+@media (max-width:920px) and (min-height:501px){
+  .stage{order:-2;position:sticky;top:0;z-index:15;background-color:var(--void);
+    padding:8px 16px 10px;border-bottom:1px solid var(--line);box-shadow:0 8px 18px rgba(0,0,0,.35)}
+  /* while an upload is shown the card is tall: let it scroll normally */
+  .stage:has(.xfer:not(.hidden)){position:static;box-shadow:none}
+  .stage .stick{gap:8px}
+  .stage .bar{gap:8px}
+  .stage .seg button{padding:4px 8px}
+  .timing{display:none}
+  #controls{order:-1}
 }

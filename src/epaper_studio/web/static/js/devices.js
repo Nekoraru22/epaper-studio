@@ -18,7 +18,7 @@ import { syncControls } from "./controls.js";
 import { layoutPreview, schedule } from "./render.js";
 import { showAdvert } from "./stats.js";
 import { errorText, flash, flashError } from "./status.js";
-import { chooseDevice, readAdvert, webStatus } from "./webble.js";
+import { canReadAdverts, chooseDevice, findGranted, readAdvert, webStatus } from "./webble.js";
 
 let scanning = false;
 let message = { key: "tags.empty" }; // shown when the list is empty: {key, params} or {error}
@@ -298,7 +298,13 @@ export function editDevice(tag, { needModel = false } = {}) {
     t(tag.transport === "web" ? "device.via_web" : "device.via_server"),
     tag.transport === "server" ? tag.address : tag.ble_name,
   ].filter(Boolean).join(" · ");
-  $("#devneed").classList.toggle("hidden", !needModel);
+  const web = tag.transport === "web";
+  const canListen = canReadAdverts();
+  const need = $("#devneed");
+  need.textContent = needModel ? t(canListen ? "device.need_model_silent" : "device.need_model") : "";
+  need.classList.toggle("hidden", !needModel);
+  $("#devflag").classList.toggle("hidden", !web || canListen);
+  wireDetect(tag, form.elements.model, web, canListen);
   $("#devforget").classList.toggle("hidden", !tag.saved);
   $("#devforget").onclick = async () => {
     dlg.close();
@@ -325,4 +331,39 @@ export function editDevice(tag, { needModel = false } = {}) {
   dlg.querySelector("[data-close]").onclick = () => dlg.close();
   dlg.showModal();
   if (!needModel) form.elements.name.focus();
+}
+
+/** The "Detect model" button: listen to the tag's advert again, for longer, and fill in the model. */
+function wireDetect(tag, select, web, canListen) {
+  const box = $("#devdetect");
+  const btn = $("#devdetectbtn");
+  const msg = $("#devdetectmsg");
+  box.classList.toggle("hidden", !web);
+  btn.disabled = !canListen;
+  msg.textContent = "";
+  msg.className = "";
+  const say = (key, params = {}, kind = "") => { msg.textContent = t(key, params); msg.className = kind; };
+  btn.onclick = async () => {
+    btn.disabled = true;
+    say("device.detecting", { seconds: 20 }, "busy");
+    try {
+      // Choosing again only works while the tap still counts as a user gesture, so try the remembered handle first.
+      let device = await findGranted(tag.address);
+      if (!device) device = await chooseDevice();
+      const advert = await readAdvert(device, 20000);
+      if (!advert) { say("device.detect_silent", {}, "err"); return; }
+      const info = await api.advert(advert.hex);
+      if (info.known) {
+        select.value = String(info.model_id);
+        say("device.detected", { model: info.model }, "ok");
+      } else {
+        say("device.detect_unknown", { id: modelHex(info.model_id) }, "err");
+      }
+    } catch (err) {
+      if (err.code === "web_cancelled") msg.textContent = "";
+      else { msg.textContent = errorText(err); msg.className = "err"; }
+    } finally {
+      btn.disabled = false;
+    }
+  };
 }

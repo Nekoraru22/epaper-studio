@@ -150,10 +150,15 @@
   <form method="dialog">
     <h3 data-i18n="device.title">Tag settings</h3>
     <p class="dim" id="devinfo"></p>
-    <p class="warn hidden" id="devneed" data-i18n="device.need_model">This browser cannot read the tag's model. Choose it to continue.</p>
+    <p class="warn hidden" id="devneed"></p>
     <label><span data-i18n="device.name">Name</span><input name="name" maxlength="60" autocomplete="off"></label>
     <label><span data-i18n="device.group">Group</span><input name="group" maxlength="40" list="groups" autocomplete="off" data-i18n-placeholder="device.group_hint"></label>
     <label><span data-i18n="device.model">Model</span><select name="model"></select></label>
+    <div class="detect hidden" id="devdetect">
+      <button type="button" class="btn" id="devdetectbtn" data-i18n="device.detect">Detect model</button>
+      <span id="devdetectmsg" role="status"></span>
+    </div>
+    <p class="dim hidden" id="devflag" data-i18n-html="device.flag_hint"></p>
     <div class="dlgbar">
       <button type="button" class="btn danger" id="devforget" data-i18n="device.forget">Forget</button>
       <span class="grow"></span>

@@ -29,6 +29,11 @@ export function webStatus() {
   return "ok";
 }
 
+/** True if this browser can listen to adverts (where the model is). Chrome needs a flag for it. */
+export function canReadAdverts() {
+  return !!(window.BluetoothDevice && "watchAdvertisements" in window.BluetoothDevice.prototype);
+}
+
 /** Handles granted in this session, by device id. */
 const granted = new Map();
 

@@ -249,5 +249,12 @@
   "login.password": "Password",
   "login.submit": "Sign in",
   "error.auth_required": "Your session has ended; sign in again",
-  "error.bad_credentials": "Wrong username or password"
+  "error.bad_credentials": "Wrong username or password",
+  "device.need_model_silent": "The tag's model was not heard. Press “Detect model” to listen again, or choose it.",
+  "device.detect": "Detect model",
+  "device.detecting": "Listening for up to {seconds} s… keep the tag close",
+  "device.detected": "Detected: {model}",
+  "device.detect_silent": "The tag was not heard. Bring it closer and try again.",
+  "device.detect_unknown": "The tag says {id}, a model this program does not know",
+  "device.flag_hint": "To detect the model automatically, open <code>chrome://flags/#enable-experimental-web-platform-features</code> in Chrome or Edge, enable it and restart the browser."
 }

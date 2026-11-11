@@ -12,7 +12,7 @@ Drop in any image, frame it, tune tone and colour, pick a dithering algorithm an
 - **Two ways to send.** *Server Bluetooth*: the machine running E-Paper Studio talks to the tag through [Bleak](https://github.com/hbldh/bleak). *This device*: the browser talks to the tag itself with Web Bluetooth (Chrome/Edge on Android, Windows, macOS, Linux), so you can walk up to a tag with your phone. Same protocol, same live log of every packet, automatic retries.
 - **Organised tags.** Give each tag a name and a group ("Kitchen", "Office"); they are remembered on the server and shown grouped.
 - **Saved designs.** Keep an image together with all its adjustments, reopen it to tweak, or resend it in one tap. Export them all to a `.zip` and import them back (merge, overwriting same-name designs, or replace all).
-- **Works on phones.** Touch-friendly layout, pinch to zoom, drag to frame.
+- **Works on phones.** Touch-friendly layout, pinch to zoom, drag to frame. The preview stays pinned at the top with the adjustments right below, so you see every change without scrolling back up.
 - **See the bytes.** The *Data* view shows the exact buffer that will be uploaded, one panel row per line, with a tooltip that decodes any byte back into pixels.
 - **Explained.** The bottom of the page walks through the whole journey — pixels → bit planes → BLE packets → refresh — using the numbers of *your* image.
 - **Saves battery.** Warns you before re-sending an image the tag already shows.
@@ -184,7 +184,7 @@ Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image bo
 | Transfers stop halfway | Set `BLE_WRITE_DELAY_MS=30`. |
 | *This device* is greyed out with an HTTPS note | Open the page over HTTPS or on localhost (see [HTTPS](#https-needed-for-this-device-from-a-phone)). |
 | *This browser has no Web Bluetooth* | Use Chrome or Edge; on iPhone, Bluefy. |
-| The tag was added but the model is unknown | Some browsers can't read adverts. Tap the pencil and choose the model; it is remembered. |
+| The tag was added but the model is unknown | The model travels in the tag's advert, which Chrome/Edge only expose with `chrome://flags/#enable-experimental-web-platform-features` enabled. Enable it and press **Detect model** in the tag's settings (pencil), or just choose the model there; it is remembered. |
 | *cannot send 244-byte blocks* | The phone's Bluetooth stack negotiated a small MTU. Try again, or use Server Bluetooth. |
 
 **Proxmox / LXC:** an unprivileged container can't open Bluetooth sockets. Use a privileged container with the host network (`lxc.net.0.type: none`) and make sure only one `bluetoothd` runs (stop it on the host or in the container, not both). A VM with the USB adapter passed through also works.

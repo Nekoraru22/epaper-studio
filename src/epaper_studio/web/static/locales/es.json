@@ -249,5 +249,12 @@
   "login.password": "Contraseña",
   "login.submit": "Entrar",
   "error.auth_required": "La sesión ha caducado; vuelve a entrar",
-  "error.bad_credentials": "Usuario o contraseña incorrectos"
+  "error.bad_credentials": "Usuario o contraseña incorrectos",
+  "device.need_model_silent": "No se oyó el modelo de la etiqueta. Pulsa «Detectar modelo» para volver a escuchar, o elígelo.",
+  "device.detect": "Detectar modelo",
+  "device.detecting": "Escuchando hasta {seconds} s… mantén la etiqueta cerca",
+  "device.detected": "Detectado: {model}",
+  "device.detect_silent": "No se oyó la etiqueta. Acércala y vuelve a intentarlo.",
+  "device.detect_unknown": "La etiqueta dice {id}, un modelo que este programa no conoce",
+  "device.flag_hint": "Para detectar el modelo automáticamente, abre <code>chrome://flags/#enable-experimental-web-platform-features</code> en Chrome o Edge, actívalo y reinicia el navegador."
 }

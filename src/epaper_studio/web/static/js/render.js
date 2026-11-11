@@ -118,6 +118,10 @@ export function showSource(image, name, url) {
   renderDesigns();
 }
 
+/** Same media query as the pinned-preview rules in app.css. */
+const PINNED = window.matchMedia("(max-width: 920px) and (min-height: 501px)");
+PINNED.addEventListener?.("change", () => layoutPreview());
+
 /** The centre block sticks while scrolling only if it fits in the window. */
 export function updateStick() {
   const st = $(".stick");
@@ -129,7 +133,10 @@ export function layoutPreview() {
   const { width: W, height: H } = S.p;
   // The chosen zoom shrinks if the tag does not fit the centre column.
   const avail = ($("#stage").clientWidth || 900) - 68;
-  const z = (S.ez = Math.max(0.25, Math.min(S.zoom, avail / W)));
+  // On phones the preview stays pinned at the top while the controls scroll, so it
+  // must leave room for them: at most ~40 % of the screen height.
+  const availH = PINNED.matches ? window.innerHeight * 0.4 : Infinity;
+  const z = (S.ez = Math.max(0.25, Math.min(S.zoom, avail / W, availH / H)));
   for (const el of [$("#preview"), $("#window")]) {
     el.style.width = W * z + "px";
     el.style.height = H * z + "px";
