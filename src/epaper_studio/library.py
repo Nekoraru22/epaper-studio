@@ -2,7 +2,7 @@
 
 Everything lives in one data directory::
 
-    <data_dir>/devices.json             names, groups and models of known tags
+    <data_dir>/devices.json             names, groups and models of tags reached by the server's Bluetooth
     <data_dir>/designs/<id>/meta.json   name, adjustment parameters, dates
     <data_dir>/designs/<id>/source.png  the working copy of the original image
     <data_dir>/designs/<id>/thumb.png   a small preview in real ink colours
@@ -33,7 +33,9 @@ from PIL import Image
 
 from epaper_studio.errors import StudioError
 
-Transport = Literal["server", "web"]
+# Only the server's own tags are stored: a browser's Bluetooth device id means nothing
+# to any other browser, so "This device" tags live in the page for as long as it is open.
+Transport = Literal["server"]
 THUMB_WIDTH = 320
 DESIGN_LIMIT = 500
 BACKUP_FORMAT = "epaper-studio-designs"
@@ -86,7 +88,9 @@ class Library:
         path = self.data_dir / "devices.json"
         if path.is_file():
             try:
-                self._devices = {d["key"]: d for d in json.loads(path.read_text("utf-8")).get("devices", [])}
+                stored = json.loads(path.read_text("utf-8")).get("devices", [])
+                # Older versions also stored browser ("web") tags; they are dropped.
+                self._devices = {d["key"]: d for d in stored if d.get("transport", "server") == "server"}
             except (ValueError, KeyError, TypeError):
                 # A damaged file should not stop the program: keep a copy and start afresh.
                 shutil.copy(path, path.with_suffix(".json.bak"))
@@ -99,9 +103,9 @@ class Library:
 
     def save_device(self, transport: Transport, address: str, *, name: str = "", group: str = "",
                     model_id: int | None = None, ble_name: str = "") -> dict[str, Any]:
-        address = address.strip()
-        if transport == "server":
-            address = address.upper()
+        if transport != "server":
+            raise StudioError("invalid_request", "Only tags reached by the server's Bluetooth are stored")
+        address = address.strip().upper()
         if not address:
             raise StudioError("invalid_request", "A device needs an address")
         key = device_key(transport, address)

@@ -10,7 +10,7 @@ Drop in any image, frame it, tune tone and colour, pick a dithering algorithm an
 
 - **Accurate preview.** Colour matching in OKLab against the *real* ink colours, gamut mapping so impossible colours (greens on a red panel) don't smear, and 9 dithering algorithms (Floyd–Steinberg, Atkinson, Jarvis-Judice-Ninke, Stucki, Burkes, Sierra, Sierra Lite, Bayer, none).
 - **Two ways to send.** *Server Bluetooth*: the machine running E-Paper Studio talks to the tag through [Bleak](https://github.com/hbldh/bleak). *This device*: the browser talks to the tag itself with Web Bluetooth (Chrome/Edge on Android, Windows, macOS, Linux), so you can walk up to a tag with your phone. Same protocol, same live log of every packet, automatic retries.
-- **Organised tags.** Give each tag a name and a group ("Kitchen", "Office"); they are remembered on the server and shown grouped.
+- **Organised tags.** Give each tag a name and a group ("Kitchen", "Office"); *Server Bluetooth* tags are remembered on the server and shown grouped. *This device* tags are kept only while the page is open, since a browser's Bluetooth id means nothing to any other browser.
 - **Saved designs.** Keep an image together with all its adjustments, reopen it to tweak, or resend it in one tap. Export them all to a `.zip` and import them back (merge, overwriting same-name designs, or replace all).
 - **Works on phones.** Touch-friendly layout, pinch to zoom, drag to frame. The preview stays pinned at the top with the adjustments right below, so you see every change without scrolling back up.
 - **See the bytes.** The *Data* view shows the exact buffer that will be uploaded, one panel row per line, with a tooltip that decodes any byte back into pixels.
@@ -103,7 +103,7 @@ Browsers only allow Web Bluetooth on secure pages. `http://localhost` counts as 
 
 ### Where things are kept
 
-Tag names and groups (`devices.json`) and saved designs (`designs/<id>/` with the source image, the settings and a thumbnail) are stored in `DATA_DIR`, by default `~/.local/share/epaper-studio`. Back up that folder to keep them; delete it to start over.
+Names and groups of *Server Bluetooth* tags (`devices.json`) and saved designs (`designs/<id>/` with the source image, the settings and a thumbnail) are stored in `DATA_DIR`, by default `~/.local/share/epaper-studio`. Back up that folder to keep them; delete it to start over.
 
 ## Configuration
 
@@ -184,7 +184,7 @@ Interactive docs at `/api/docs`. Main endpoints: `POST /api/image` (raw image bo
 | Transfers stop halfway | Set `BLE_WRITE_DELAY_MS=30`. |
 | *This device* is greyed out with an HTTPS note | Open the page over HTTPS or on localhost (see [HTTPS](#https-needed-for-this-device-from-a-phone)). |
 | *This browser has no Web Bluetooth* | Use Chrome or Edge; on iPhone, Bluefy. |
-| The tag was added but the model is unknown | The model travels in the tag's advert, which Chrome/Edge only expose with `chrome://flags/#enable-experimental-web-platform-features` enabled. Enable it and press **Detect model** in the tag's settings (pencil), or just choose the model there; it is remembered. |
+| The tag was added but the model is unknown | The model travels in the tag's advert, which Chrome/Edge only expose with `chrome://flags/#enable-experimental-web-platform-features` enabled. Enable it and press **Detect model** in the tag's settings (pencil), or just choose the model there. *This device* tags are forgotten when you close the page, so you choose it again next time. |
 | *cannot send 244-byte blocks* | The phone's Bluetooth stack negotiated a small MTU. Try again, or use Server Bluetooth. |
 
 **Proxmox / LXC:** an unprivileged container can't open Bluetooth sockets. Use a privileged container with the host network (`lxc.net.0.type: none`) and make sure only one `bluetoothd` runs (stop it on the host or in the container, not both). A VM with the USB adapter passed through also works.

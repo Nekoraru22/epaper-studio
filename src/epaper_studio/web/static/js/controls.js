@@ -66,6 +66,36 @@ export function syncControls() {
 
 const optionLabel = (k, v) => t(`option.${k}.${v}`);
 
+/*
+ * Touch guard for sliders. On a phone, scrolling through the panel means
+ * dragging a finger across sliders, and the browser moves whichever one the
+ * finger lands on (the zoom slider sits right under the preview). A slider
+ * touched with a finger only takes values once the finger has clearly moved
+ * sideways; taps and vertical swipes leave it alone and just scroll the page
+ * (``touch-action: pan-y`` in app.css hands those to the browser).
+ */
+const SIDEWAYS = 8; // px of horizontal travel that make a touch "adjust this slider"
+let touch = null;   // {el, id, x, y, ok} for the finger currently on a slider
+
+document.addEventListener("pointerdown", (ev) => {
+  touch = ev.pointerType === "touch" && ev.target instanceof HTMLInputElement && ev.target.type === "range"
+    ? { el: ev.target, id: ev.pointerId, x: ev.clientX, y: ev.clientY, ok: false }
+    : null;
+}, true);
+document.addEventListener("pointermove", (ev) => {
+  if (!touch || touch.ok || ev.pointerId !== touch.id) return;
+  const dx = Math.abs(ev.clientX - touch.x), dy = Math.abs(ev.clientY - touch.y);
+  if (dx >= SIDEWAYS && dx > dy * 1.5) touch.ok = true;
+}, true);
+for (const type of ["pointerup", "pointercancel"]) {
+  document.addEventListener(type, (ev) => {
+    if (touch && ev.pointerId === touch.id) setTimeout(() => { touch = null; }); // after the last input event
+  }, true);
+}
+
+/** True if this input event comes from a finger that has not (yet) dragged the slider sideways. */
+const accidental = (input) => touch !== null && touch.el === input && !touch.ok;
+
 function buildControl(it) {
   const wrap = document.createElement("div");
   wrap.className = "ctl";
@@ -81,6 +111,7 @@ function buildControl(it) {
     input.setAttribute("aria-label", label);
     input.title = t("control.reset_hint");
     input.oninput = () => {
+      if (accidental(input)) { input.value = S.p[it.k]; return; } // scrolling past, not adjusting
       S.p[it.k] = parseFloat(input.value);
       out.textContent = it.fmt(S.p[it.k]);
       schedule();

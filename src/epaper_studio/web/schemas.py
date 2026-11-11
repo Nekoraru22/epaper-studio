@@ -23,7 +23,9 @@ class SendRequest(BaseModel):
 
 
 class DeviceRequest(BaseModel):
-    transport: Literal["server", "web"] = Field(description="Whose Bluetooth reaches it: the server's or the browser's")
+    transport: Literal["server"] = Field(
+        "server", description="Only tags reached by the server's Bluetooth are stored; browser tags stay in the page"
+    )
     address: str = Field(min_length=1, max_length=200, description="MAC address, or the browser's device id")
     name: str = Field("", max_length=60, description="Name chosen by the user")
     group: str = Field("", max_length=40, description="Free-form group, e.g. a room")

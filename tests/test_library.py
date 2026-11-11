@@ -22,12 +22,24 @@ def test_devices_round_trip(library: Library) -> None:
     assert rec["name"] == "NEMR00001234"  # falls back to the advertised name
     renamed = library.save_device("server", "AA:BB:CC:00:12:34", name="Kitchen door", group="Kitchen")
     assert renamed["key"] == rec["key"] and renamed["model_id"] == 0x4B and renamed["ble_name"] == "NEMR00001234"
-    web = library.save_device("web", "Ab+/cd==", name="Fridge", group="Kitchen", model_id=0x33)
-    assert "/" not in web["key"] and web["key"] == device_key("web", "Ab+/cd==")
+    other = library.save_device("server", "11:22:33:44:55:66", name="Fridge", group="Kitchen", model_id=0x33)
+    assert other["key"] == device_key("server", "11:22:33:44:55:66")
     assert [d["name"] for d in library.devices()] == ["Fridge", "Kitchen door"]
-    library.forget_device(web["key"])
+    library.forget_device(other["key"])
     with pytest.raises(StudioError):
-        library.forget_device(web["key"])
+        library.forget_device(other["key"])
+    # Browser tags are never stored: their ids only mean something to that browser.
+    with pytest.raises(StudioError):
+        library.save_device("web", "Ab+/cd==")  # type: ignore[arg-type]
+
+
+def test_old_web_devices_are_dropped(tmp_path) -> None:
+    doc = {"version": 1, "devices": [
+        {"key": "a", "transport": "web", "address": "x/y==", "name": "Phone tag", "group": ""},
+        {"key": "b", "transport": "server", "address": "AA:BB:CC:00:12:34", "name": "Hall", "group": ""},
+    ]}
+    (tmp_path / "devices.json").write_text(json.dumps(doc))
+    assert [d["name"] for d in Library(tmp_path).devices()] == ["Hall"]
 
 
 def test_devices_persist(tmp_path) -> None:
@@ -63,7 +75,8 @@ def test_design_ids_cannot_escape(tmp_path) -> None:
 def test_api(tmp_path, photo_png: bytes) -> None:
     with TestClient(create_app(Settings(data_dir=tmp_path))) as c:
         login(c)
-        dev = c.post("/api/devices", json={"transport": "web", "address": "x/y==", "name": "Desk"}).json()
+        assert c.post("/api/devices", json={"transport": "web", "address": "x/y=="}).status_code == 422
+        dev = c.post("/api/devices", json={"address": "aa:bb:cc:00:12:34", "name": "Desk"}).json()
         assert c.get("/api/devices").json()[0]["name"] == "Desk"
         assert c.delete(f"/api/devices/{dev['key']}").json() == {"ok": True}
 

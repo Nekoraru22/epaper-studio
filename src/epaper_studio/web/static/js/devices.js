@@ -6,8 +6,10 @@
  *   "server" — the adapter of the machine running E-Paper Studio (scan from the server)
  *   "web"    — the Bluetooth of the device showing this page (Web Bluetooth)
  *
- * Saved devices (name, group, model) live on the server, so they show up on
- * every browser. A tag in the list is described by ``describe()``.
+ * Server tags (name, group, model) are saved on the server, so they show up on
+ * every browser. "This device" tags are kept only in this page while it is open:
+ * the id a browser hands out for a Bluetooth device means nothing to any other
+ * browser. A tag in the list is described by ``describe()``.
  */
 
 import { api } from "./api.js";
@@ -148,7 +150,8 @@ export function setMessage(key, params = {}) {
 
 export async function loadDevices() {
   try {
-    S.devices = await api.devices();
+    const stored = (await api.devices()).filter((d) => d.transport === "server");
+    S.devices = [...stored, ...S.devices.filter((d) => d.transport === "web")]; // keep this page's own tags
   } catch (err) {
     flashError(err);
   }
@@ -159,7 +162,7 @@ export function setSource(source) {
   S.source = source;
   store.set("source", source);
   message = { key: "tags.empty" };
-  const last = store.get(`tag:${source}`, null);
+  const last = source === "server" ? store.get("tag:server", null) : null;
   const record = last && S.devices.find((d) => d.key === last);
   if (record) pickTag(describe(record), { quiet: true });
   else S.tag = S.tag?.transport === source ? S.tag : null;
@@ -220,7 +223,25 @@ async function addWebDevice() {
   if (tag.model_id == null) editDevice(tag, { needModel: true });
 }
 
+/** A "This device" tag, kept in memory only (same shape as a server record). */
+function rememberLocally(body) {
+  const key = `web:${body.address}`;
+  const old = S.devices.find((d) => d.key === key) || {};
+  const bleName = (body.ble_name || "").trim() || old.ble_name || "";
+  const record = {
+    key, transport: "web", address: body.address,
+    name: (body.name || "").trim().slice(0, 60) || old.name || bleName || body.address,
+    group: (body.group || "").trim().slice(0, 40),
+    model_id: body.model_id ?? old.model_id ?? null,
+    ble_name: bleName,
+    added: old.added || Math.floor(Date.now() / 1000),
+  };
+  S.devices = [...S.devices.filter((d) => d.key !== key), record];
+  return record;
+}
+
 async function saveDevice(body) {
+  if (body.transport === "web") return rememberLocally(body);
   try {
     const record = await api.saveDevice(body);
     S.devices = [...S.devices.filter((d) => d.key !== record.key), record];
@@ -239,7 +260,7 @@ export async function pickTag(tag, { quiet = false } = {}) {
     if (record) tag = { ...tag, key: record.key, saved: true, name: record.name };
   }
   S.tag = tag;
-  if (tag.key) store.set(`tag:${tag.transport}`, tag.key);
+  if (tag.key && tag.transport === "server") store.set("tag:server", tag.key);
   renderTags();
   showAdvert(tag);
   if (!tag.known) return;
@@ -263,12 +284,12 @@ export async function rememberWebId(tag, device) {
   if (tag.key) await forget(tag.key, { silent: true });
   const fresh = { ...tag, key: record?.key, address: device.id };
   S.tag = fresh;
-  if (fresh.key) store.set("tag:web", fresh.key);
   renderTags();
   return fresh;
 }
 
 async function forget(key, { silent = false } = {}) {
+  if (key.startsWith("web:")) { S.devices = S.devices.filter((d) => d.key !== key); return; }
   try {
     await api.forgetDevice(key);
     S.devices = S.devices.filter((d) => d.key !== key);
