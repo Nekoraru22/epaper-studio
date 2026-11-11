@@ -1,0 +1,178 @@
+<!-- Explanation shown at the bottom of the page (English). Elements with an id or data-live are filled in by js/stats.js; keep them in sync with how.es.html. -->
+<div class="lead">
+  <h1>From your image to the tag</h1>
+  <p>An e-paper tag does not receive a photo: it receives an exact bitmap, piece by piece,
+  over a radio that only listens for a few milliseconds at a time. This is the whole journey, with
+  the real Gicisky protocol and the numbers of the image you have on screen right now. When you
+  send, the card under the tag shows these same messages as they happen.</p>
+</div>
+
+<div class="pipe">
+  <svg viewBox="0 0 980 150" role="img" aria-label="Pipeline: image, quantisation, bit planes, BLE packets, panel">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0L10 5L0 10z" fill="#5A626B"/>
+      </marker>
+    </defs>
+    <g font-family="IBM Plex Sans, sans-serif" font-size="12.5" fill="#D8DCE0">
+      <!-- 1 image -->
+      <rect x="10" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <rect x="30" y="44" width="54" height="40" rx="2" fill="#7C6CA8"/><rect x="58" y="58" width="40" height="30" rx="2" fill="#D98A6E"/>
+      <text x="85" y="104" text-anchor="middle">Original image</text>
+      <!-- 2 pigments -->
+      <rect x="210" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <g transform="translate(244 42)">
+        <rect width="80" height="44" fill="#E8E7DE"/>
+        <rect x="6" y="6" width="30" height="16" fill="#222226"/><rect x="40" y="18" width="30" height="20" fill="#B02428"/>
+      </g>
+      <text x="285" y="104" text-anchor="middle">Three pigments</text>
+      <!-- 3 planes -->
+      <rect x="410" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <text x="485" y="58" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#AEB5BB">1011 0010…</text>
+      <text x="485" y="78" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#E69A9A">0000 1100…</text>
+      <text x="485" y="104" text-anchor="middle">Bit planes</text>
+      <!-- 4 packets -->
+      <rect x="610" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <g fill="#2E2224" stroke="#5A3236"><rect x="630" y="44" width="34" height="14" rx="2"/><rect x="668" y="44" width="34" height="14" rx="2"/><rect x="706" y="44" width="34" height="14" rx="2"/>
+      <rect x="630" y="62" width="34" height="14" rx="2"/><rect x="668" y="62" width="34" height="14" rx="2"/></g>
+      <text x="685" y="104" text-anchor="middle">BLE packets</text>
+      <!-- 5 panel -->
+      <rect x="810" y="28" width="160" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <rect x="838" y="40" width="104" height="48" rx="4" fill="#F2F1EC"/>
+      <rect x="846" y="47" width="88" height="34" fill="#E8E7DE"/><rect x="852" y="52" width="40" height="7" fill="#222226"/><rect x="852" y="64" width="26" height="12" fill="#B02428"/>
+      <text x="890" y="104" text-anchor="middle">Tag</text>
+      <g stroke="#5A626B" stroke-width="1.5" marker-end="url(#ah)">
+        <line x1="162" y1="72" x2="206" y2="72"/><line x1="362" y1="72" x2="406" y2="72"/>
+        <line x1="562" y1="72" x2="606" y2="72"/><line x1="762" y1="72" x2="806" y2="72"/>
+      </g>
+      <g font-size="11" fill="#7F8890" text-anchor="middle">
+        <text x="184" y="138">dithering</text><text x="384" y="138">packing</text>
+        <text x="584" y="138">chunking</text><text x="784" y="138">2.4 GHz radio</text>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div class="steps">
+  <article class="step"><div>
+    <h3>Framing to the panel's exact size</h3>
+    <p>The panel has a fixed grid of <b class="mono" data-live="dims">400 × 300</b> pixels
+    (<span class="mono" data-live="pixels">120,000</span> in total) and accepts nothing else. The image is rotated,
+    scaled with a Lanczos filter (the one that best keeps edges when shrinking) and cropped to the
+    framing you choose by dragging.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Each pixel picks one of three pigments</h3>
+    <p>Electronic ink does not mix colours: every dot is white, black or red, with no greys. To
+    decide which, the image is converted to <b>OKLab</b>, a colour space in which mathematical
+    distance resembles the difference the eye perceives. It is compared with the <i>real</i>
+    colour of each ink (the paper's white is slightly cream and the red is dark), not with ideal
+    RGB.</p>
+    <p>Intermediate tones are faked with <b>error-diffusion dithering</b>: when a pixel is rounded,
+    the difference that is lost is spread among its not-yet-processed neighbours, so a grey area
+    ends up as a mix of black and white dots in just the right proportion.</p>
+    <p>First, every colour is projected onto what the panel can paint. A white, black and red
+    panel has a single colour axis, the red one: a green points the opposite way, so it contributes
+    no red at all and is dithered in greys; a purple keeps only its reddish part. Without this, the
+    error of those impossible colours would pile up with no way to compensate and end up spilling
+    as blotches over other parts of the image.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Packing into bit planes</h3>
+    <p>The panel controller knows nothing about colours, only bits. Your tag receives two planes
+    of 1 bit per pixel, one after the other: in the first a <code>1</code> is white and a
+    <code>0</code> is ink; in the second a <code>1</code> is red. A red dot is therefore
+    <code>0</code> in the first plane and <code>1</code> in the second. Rows go from top to bottom and
+    each byte holds eight consecutive pixels, the leftmost in the highest bit. In the <b>Data</b>
+    view, above the tag, you can walk through the bytes of your image this way, row by row:</p>
+    <div class="bits">
+      <div>
+        <div class="pix" id="pix"></div>
+        <div class="pixbits" id="pixbits" style="margin-top:6px"></div>
+      </div>
+      <span class="arrow">→</span>
+      <div class="byte"><b id="byteval">0x00</b><span class="dim">one byte of the black/white plane</span></div>
+    </div>
+    <div class="figs">
+      <div class="fig"><div class="n" data-live="plane">15,000</div><div class="l">bytes per plane</div></div>
+      <div class="fig"><div class="n" data-live="planes">2</div><div class="l">planes</div></div>
+      <div class="fig"><div class="n" data-live="total">30,000</div><div class="l">bytes in total</div></div>
+    </div>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Finding the tag: the advert</h3>
+    <p>The tag spends almost all of its time asleep. Every so often it powers the radio for an
+    instant, sends an <b>advert</b> and goes back to sleep; that is why it comes and goes while
+    scanning. The advert carries a block of <b>manufacturer data</b> with the identifier
+    <code>0x5053</code> and five bytes that say what it is and how it is doing. Those of
+    <span id="advwho">a tag like yours</span>:</p>
+    <div class="adv">
+      <div><code id="adv0">4b</code><div class="l">model, low byte</div><div class="v" id="advm">0x004B</div></div>
+      <div><code id="adv1">1e</code><div class="l">voltage in tenths</div><div class="v" id="advv">3.0 V</div></div>
+      <div><code id="adv2">81 01</code><div class="l">firmware</div><div class="v" id="advf">0x8101</div></div>
+      <div><code id="adv4">40</code><div class="l">model, high byte</div><div class="v" id="advh">hardware 0x404B</div></div>
+    </div>
+    <p>The model comes from joining the first and last bytes and keeping 14 bits:
+    <span id="advmodel">0x004B, a white, black and red EPD 4.2" of 400 × 300</span>. With that the
+    program knows the panel's exact size and how to pack the image.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Connection and services</h3>
+    <p>This program, acting as the <i>central</i>, waits for one of those adverts and answers in
+    that same window with a connection request. Once connected, it walks the tag's <b>GATT</b>
+    table looking for service <code>fef0</code>. Inside there are two characteristics that matter:
+    commands go out and replies come back on <code>fef1</code>, which the tag sends as
+    <i>notifications</i>; the image data goes on <code>fef2</code>.</p>
+    <p>First the <b>MTU</b>, the maximum size of each message, is negotiated. Without negotiation it
+    is 23 bytes, which would not be enough here: each block is <span class="mono" data-live="pkt">244</span>
+    bytes plus a 3-byte header, so an MTU of at least <span class="mono" data-live="minmtu">247</span> is
+    needed. BlueZ negotiates it on its own when connecting.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Three commands to start</h3>
+    <p>All of them are written to <code>fef1</code> without asking for a protocol-level
+    acknowledgement: the answer arrives as a notification, and the program does not send the next
+    one until it gets it.</p>
+    <div class="talk">
+      <div class="row head"><span class="what">Sends</span><span class="what">Tag replies</span><span class="what">Meaning</span></div>
+      <div class="row"><span class="send">01</span><span class="back">01 f4 00</span><span class="what">Ready to receive? Yes.</span></div>
+      <div class="row"><span class="send" data-live="sizehex">02 30 75 00 00 00 00 00</span><span class="back">02 …</span>
+        <span class="what"><span data-live="total">30,000</span> bytes are coming (size in 4 bytes, least significant first).</span></div>
+      <div class="row"><span class="send">03</span><span class="back">05 00 00 00 00 00</span><span class="what">Go. Asks for block 0.</span></div>
+    </div>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>The image, block by block</h3>
+    <p>The image is cut into blocks of <span class="mono" data-live="block">240</span> bytes. Each one
+    is written to <code>fef2</code> preceded by its number in 4 bytes, and the tag answers on
+    <code>fef1</code> with <code>05 00</code> and the number of the block it wants next. The tag sets
+    the pace: if a block arrives damaged, it asks for the same number again and the program repeats
+    it. When it asks for one past the end, the image is complete. The first ones of your image,
+    with their real bytes:</p>
+    <div class="packets" id="packets"></div>
+    <div class="figs">
+      <div class="fig"><div class="n" data-live="packets">125</div><div class="l">blocks</div></div>
+      <div class="fig"><div class="n" data-live="airtime">3.8 s</div><div class="l">on air, roughly</div></div>
+    </div>
+    <p class="note">The estimate assumes about 30 ms per block: one write and one notification back,
+    each in its own connection event. What takes longest is almost always the part before: waiting
+    for the advert and connecting.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Refresh and back to sleep</h3>
+    <p>With the buffer complete, the program disconnects and the tag refreshes the panel: it applies
+    a sequence of voltages that first clears the previous image (the black and white flashing) and
+    then sets the pigments. Red is the slowest to move, so on panels with red it takes around
+    <b>15 seconds</b>.</p>
+    <p>Then it goes back to sleep and the image stays put without using any power: e-paper only
+    consumes energy when it changes. That is why a coin cell lasts for years, and why the program
+    warns you if you try to send the image the tag is already showing.</p>
+  </div></article>
+</div>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E-Paper Studio</title>
+<meta name="description" content="Prepare images for Gicisky e-paper tags and send them over Bluetooth.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 24'%3E%3Crect width='32' height='24' rx='3' fill='%23E8E7DE'/%3E%3Crect x='4' y='4' width='15' height='4' fill='%23222226'/%3E%3Crect x='4' y='11' width='10' height='9' fill='%23BE3232'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="tag"></span><b>E-Paper Studio</b>
+    <a href="#how" data-i18n="header.how">How is it sent?</a>
+  </div>
+  <div class="field">
+    <span data-i18n="header.panel">Panel</span>
+    <select id="panel">
+      <option value="400x300">4.2" · 400×300</option>
+      <option value="296x128">2.9" · 296×128</option>
+      <option value="250x128">2.1" · 250×128</option>
+      <option value="240x416">3.7" · 240×416</option>
+      <option value="800x480">7.5" · 800×480</option>
+      <option value="960x640">10.2" · 960×640</option>
+    </select>
+  </div>
+  <div class="lang" id="lang" role="group" aria-label="Language"></div>
+  <span id="status" role="status"></span>
+  <button class="btn accent" id="send" disabled data-i18n="header.send">Send to tag</button>
+</header>
+
+<main class="work">
+  <!-- Left column: tag, source image, presets and pigment coverage -->
+  <aside class="col">
+    <div>
+      <h2 class="h2row"><span data-i18n="tags.title">Tag</span>
+        <button class="link" id="scan" type="button">Scan</button></h2>
+      <div class="seg source" id="source-seg" role="group" data-i18n-aria="tags.source">
+        <button type="button" data-src="server" data-i18n="tags.source_server">Server Bluetooth</button>
+        <button type="button" data-src="web" data-i18n="tags.source_web">This device</button>
+      </div>
+      <p class="srcnote hidden" id="srcnote"></p>
+      <div class="tags" id="tags"></div>
+    </div>
+
+    <div>
+      <h2 data-i18n="image.title">Image</h2>
+      <div class="drop" id="drop" tabindex="0" role="button">
+        <b data-i18n="image.drop">Drop an image here</b><span data-i18n="image.drop_hint">or click · you can also paste it with Ctrl+V</span>
+      </div>
+      <input type="file" id="file" accept="image/*" class="hidden">
+      <div id="source" class="hidden" style="margin-top:12px">
+        <div class="thumb"><canvas id="thumb"></canvas></div>
+        <div class="meta"><span id="srcname"></span><span class="mono" id="srcsize"></span></div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="h2row"><span data-i18n="designs.title">Saved designs</span>
+        <button class="link hidden" id="dupdate" type="button" data-i18n="designs.update">Update</button>
+        <button class="link" id="dsave" type="button" disabled data-i18n="designs.save">Save</button></h2>
+      <div class="designs" id="designs"></div>
+    </div>
+
+    <div>
+      <h2 data-i18n="presets.title">Starting point</h2>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <div>
+      <h2 data-i18n="coverage.title">Pigment coverage</h2>
+      <div class="cover" id="cover"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </aside>
+
+  <!-- Centre: the tag -->
+  <section class="stage" id="stage">
+    <div class="stick">
+      <div class="bar">
+        <div class="seg" id="view">
+          <button data-v="pure" class="on" data-i18n="view.pure">Pixels sent</button>
+          <button data-v="ink" data-i18n="view.ink">Real ink</button>
+          <button data-v="tone" data-i18n="view.tone">Before dithering</button>
+          <button data-v="data" data-i18n="view.data">Data</button>
+        </div>
+        <div class="seg" id="zoom">
+          <button data-z="1">1×</button><button data-z="2" class="on">2×</button><button data-z="3">3×</button>
+        </div>
+      </div>
+
+      <div class="device">
+        <div class="case">
+          <div class="window" id="window">
+            <img id="preview" alt="" data-i18n-alt="preview.alt">
+            <div class="dump hidden" id="dump"><div class="spacer" id="dumpspace"></div><canvas id="dumpcv"></canvas></div>
+            <div class="dumptip hidden" id="dumptip"></div>
+            <div class="empty" id="empty" data-i18n="preview.empty">Tap here or drop an image to start</div>
+            <div class="busyline"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hint" id="hint"></div>
+      <div class="timing mono" id="timing"></div>
+
+      <div class="xfer hidden" id="xfer" aria-live="polite">
+        <div class="xhead">
+          <b id="xtitle"></b><span class="mono" id="xmeta"></span>
+          <button class="close" id="xclose" type="button" data-i18n="transfer.close">Close</button>
+        </div>
+        <ol class="phases" id="phases">
+          <li data-p="scan" data-i18n="transfer.phase.scan">Advert</li>
+          <li data-p="connect" data-i18n="transfer.phase.connect">Connect</li>
+          <li data-p="gatt" data-i18n="transfer.phase.gatt">Services</li>
+          <li data-p="handshake" data-i18n="transfer.phase.handshake">Commands</li>
+          <li data-p="blocks" data-i18n="transfer.phase.blocks">Blocks</li>
+          <li data-p="refresh" data-i18n="transfer.phase.refresh">Refresh</li>
+        </ol>
+        <div class="pbar"><span id="pfill"></span></div>
+        <div class="xlog mono" id="xlog"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Right column: adjustments, built from js/controls.js -->
+  <aside class="col right" id="controls"></aside>
+</main>
+
+<!-- Explanation: loaded per language from locales/how.<lang>.html -->
+<section class="explain" id="how">
+  <div class="inner" id="how-content"></div>
+</section>
+
+<!-- Device settings: name, group and model of a tag -->
+<dialog id="devdialog" class="dlg">
+  <form method="dialog">
+    <h3 data-i18n="device.title">Tag settings</h3>
+    <p class="dim" id="devinfo"></p>
+    <p class="warn hidden" id="devneed" data-i18n="device.need_model">This browser cannot read the tag's model. Choose it to continue.</p>
+    <label><span data-i18n="device.name">Name</span><input name="name" maxlength="60" autocomplete="off"></label>
+    <label><span data-i18n="device.group">Group</span><input name="group" maxlength="40" list="groups" autocomplete="off" data-i18n-placeholder="device.group_hint"></label>
+    <label><span data-i18n="device.model">Model</span><select name="model"></select></label>
+    <div class="dlgbar">
+      <button type="button" class="btn danger" id="devforget" data-i18n="device.forget">Forget</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" data-close data-i18n="dialog.cancel">Cancel</button>
+      <button type="submit" class="btn accent" data-i18n="dialog.save">Save</button>
+    </div>
+  </form>
+</dialog>
+<datalist id="groups"></datalist>
+
+<!-- A name for a saved design -->
+<dialog id="namedialog" class="dlg">
+  <form method="dialog">
+    <h3 id="nametitle"></h3>
+    <label><span data-i18n="designs.name">Name</span><input name="name" maxlength="60" required autocomplete="off"></label>
+    <div class="dlgbar">
+      <span class="grow"></span>
+      <button type="button" class="btn" data-close data-i18n="dialog.cancel">Cancel</button>
+      <button type="submit" class="btn accent" data-i18n="dialog.save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

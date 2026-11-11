@@ -174,8 +174,8 @@ There is no authentication. Anyone who can reach the port can upload images to y
 ## Development
 
 ```bash
-uv sync                          # installs dev tools too
-uv run pytest                    # tests, including a simulated tag
+uv sync                                  # installs dev tools too
+uv run pytest                            # tests, including a simulated tag
 uv run ruff check .
 uv run python tests/run_fake_server.py   # the UI against a fake tag, no hardware needed
 ```

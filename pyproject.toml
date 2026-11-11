@@ -1,0 +1,62 @@
+[project]
+name = "epaper-studio"
+version = "0.3.0"
+description = "Prepare images for Gicisky BLE e-paper tags and send them straight over Bluetooth, no Home Assistant needed."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "nekoraru22" }]
+keywords = ["e-paper", "eink", "gicisky", "bluetooth", "ble", "dithering", "esl"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Home Automation",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "pillow>=10.0",
+    "numpy>=1.26",
+    "bleak>=3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/nekoraru22/epaper-studio"
+Issues = "https://github.com/nekoraru22/epaper-studio/issues"
+
+[project.scripts]
+epaper-studio = "epaper_studio.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epaper_studio"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning:fastapi.testclient", "ignore:Using `httpx`"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "BLE"]
+# E741: `l` is the standard name of OKLab lightness.  SIM105/SIM108: explicit blocks read better here.
+ignore = ["E741", "SIM105", "SIM108"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["epaper_studio"]

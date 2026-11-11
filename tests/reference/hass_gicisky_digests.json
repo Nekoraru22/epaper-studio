@@ -1,0 +1,51 @@
+{
+  "source": "https://github.com/eigger/hass-gicisky",
+  "commit": "f144d16b30e59069e1f9e8a1375781fc33e1eefa",
+  "models": {
+    "0x000B": {
+      "name": "EPD 2.1\" B/W/R",
+      "bytes": 5512,
+      "sha256": "a91a1847493ae7fecd59afa57c5b8f95977e28fbe745448e1f88d7d6c44165c4"
+    },
+    "0x0028": {
+      "name": "EPD 2.9\" B/W",
+      "bytes": 4736,
+      "sha256": "7b739c6ee142e2e8baaac48533d4622efeb219a7af64010bbb5d33c39ed0ea77"
+    },
+    "0x002E": {
+      "name": "EPD 2.9\" B/W/R/Y",
+      "bytes": 9472,
+      "sha256": "6ef824b5665fbe62c6b08e8ea288dfca2f736d3230abf2c5fb119b68d4fd06b4"
+    },
+    "0x0033": {
+      "name": "EPD 2.9\" B/W/R",
+      "bytes": 9472,
+      "sha256": "3ed2dd80090f7aef9051a4ba059a1778fbe0992ed81e5efb93aad7a9d846531e"
+    },
+    "0x004B": {
+      "name": "EPD 4.2\" B/W/R",
+      "bytes": 30000,
+      "sha256": "5e97312be1de8cd548c52553d09201f014ed3b4efd2843428d95bae3c9e7e192"
+    },
+    "0x004E": {
+      "name": "EPD 4.2\" B/W/R/Y",
+      "bytes": 30000,
+      "sha256": "2b09cb2fb57055445cfe613dc4a40023f89fb4847c22826879e5e8c79e385e0f"
+    },
+    "0x00A0": {
+      "name": "TFT 2.1\" B/W",
+      "bytes": 4125,
+      "sha256": "fa96b9fd3ada16611f6db137f95893f12bc9843dd07fc5c540a1c98c426a4028"
+    },
+    "0x010B": {
+      "name": "EPD 2.1\" B/W/R",
+      "bytes": 8000,
+      "sha256": "0ceddb8498625ff54023b2a43cd50713dba7f55a27058f02a92434dd0aae2ff0"
+    },
+    "0x022B": {
+      "name": "EPD 3.7\" B/W/R",
+      "bytes": 28324,
+      "sha256": "2f93b89100be091bcb5b249cd7f8e900cae36ef61a0f010b0dc9edf7dfd0afd5"
+    }
+  }
+}

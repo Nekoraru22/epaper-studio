@@ -1,0 +1,176 @@
+<!-- Explanation shown at the bottom of the page (Spanish). Elements with an id or data-live are filled in by js/stats.js; keep them in sync with how.en.html. -->
+<div class="lead">
+  <h1>De tu imagen a la etiqueta</h1>
+  <p>Una etiqueta e-paper no recibe una foto: recibe un mapa de bits exacto, trozo a trozo,
+  por una radio que solo escucha unos milisegundos cada vez. Este es el recorrido completo, con
+  el protocolo real de Gicisky y los números de la imagen que tienes ahora en pantalla. Cuando
+  envías, la tarjeta bajo la etiqueta muestra estos mismos mensajes a medida que ocurren.</p>
+</div>
+
+<div class="pipe">
+  <svg viewBox="0 0 980 150" role="img" aria-label="Recorrido: imagen, cuantización, planos de bits, paquetes BLE, panel">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0L10 5L0 10z" fill="#5A626B"/>
+      </marker>
+    </defs>
+    <g font-family="IBM Plex Sans, sans-serif" font-size="12.5" fill="#D8DCE0">
+      <!-- 1 imagen -->
+      <rect x="10" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <rect x="30" y="44" width="54" height="40" rx="2" fill="#7C6CA8"/><rect x="58" y="58" width="40" height="30" rx="2" fill="#D98A6E"/>
+      <text x="85" y="104" text-anchor="middle">Imagen original</text>
+      <!-- 2 pigmentos -->
+      <rect x="210" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <g transform="translate(244 42)">
+        <rect width="80" height="44" fill="#E8E7DE"/>
+        <rect x="6" y="6" width="30" height="16" fill="#222226"/><rect x="40" y="18" width="30" height="20" fill="#B02428"/>
+      </g>
+      <text x="285" y="104" text-anchor="middle">Tres pigmentos</text>
+      <!-- 3 planos -->
+      <rect x="410" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <text x="485" y="58" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#AEB5BB">1011 0010…</text>
+      <text x="485" y="78" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#E69A9A">0000 1100…</text>
+      <text x="485" y="104" text-anchor="middle">Planos de bits</text>
+      <!-- 4 paquetes -->
+      <rect x="610" y="28" width="150" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <g fill="#2E2224" stroke="#5A3236"><rect x="630" y="44" width="34" height="14" rx="2"/><rect x="668" y="44" width="34" height="14" rx="2"/><rect x="706" y="44" width="34" height="14" rx="2"/>
+      <rect x="630" y="62" width="34" height="14" rx="2"/><rect x="668" y="62" width="34" height="14" rx="2"/></g>
+      <text x="685" y="104" text-anchor="middle">Paquetes BLE</text>
+      <!-- 5 panel -->
+      <rect x="810" y="28" width="160" height="88" rx="8" fill="#1B1F23" stroke="#323940"/>
+      <rect x="838" y="40" width="104" height="48" rx="4" fill="#F2F1EC"/>
+      <rect x="846" y="47" width="88" height="34" fill="#E8E7DE"/><rect x="852" y="52" width="40" height="7" fill="#222226"/><rect x="852" y="64" width="26" height="12" fill="#B02428"/>
+      <text x="890" y="104" text-anchor="middle">Etiqueta</text>
+      <g stroke="#5A626B" stroke-width="1.5" marker-end="url(#ah)">
+        <line x1="162" y1="72" x2="206" y2="72"/><line x1="362" y1="72" x2="406" y2="72"/>
+        <line x1="562" y1="72" x2="606" y2="72"/><line x1="762" y1="72" x2="806" y2="72"/>
+      </g>
+      <g font-size="11" fill="#7F8890" text-anchor="middle">
+        <text x="184" y="138">tramado</text><text x="384" y="138">empaquetado</text>
+        <text x="584" y="138">troceado</text><text x="784" y="138">radio 2,4 GHz</text>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div class="steps">
+  <article class="step"><div>
+    <h3>Encuadre al tamaño exacto del panel</h3>
+    <p>El panel tiene una rejilla fija de <b class="mono" data-live="dims">400 × 300</b> píxeles
+    (<span class="mono" data-live="pixels">120 000</span> en total) y no admite otra cosa. La imagen se gira, se
+    escala con un filtro Lanczos —el que mejor conserva los bordes al reducir— y se recorta según
+    el encuadre que eliges arrastrando.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Cada píxel elige uno de tres pigmentos</h3>
+    <p>La tinta electrónica no mezcla colores: cada punto es blanco, negro o rojo, sin grises. Para
+    decidir cuál, la imagen se pasa a <b>OKLab</b>, un espacio de color en el que la distancia
+    matemática se parece a la diferencia que percibe el ojo. Se compara con el color
+    <i>real</i> de cada tinta (el blanco del papel es algo crema y el rojo, oscuro), no con el
+    RGB ideal.</p>
+    <p>Los tonos intermedios se fingen con <b>tramado por difusión de error</b>: al redondear un
+    píxel, la diferencia que se pierde se reparte entre sus vecinos aún sin procesar, de modo que
+    una zona gris acaba como una mezcla de puntos negros y blancos en la proporción justa.</p>
+    <p>Antes, cada color se proyecta sobre lo que el panel puede pintar. Un panel blanco, negro y
+    rojo solo tiene un eje de color, el del rojo: un verde apunta justo al lado contrario, así que
+    no aporta nada de rojo y se trama en grises; un morado conserva solo su parte rojiza. Si no se
+    hiciera, el error de esos colores imposibles se acumularía sin poder compensarse y acabaría
+    derramándose como manchas sobre otras zonas de la imagen.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Empaquetado en planos de bits</h3>
+    <p>El controlador del panel no entiende de colores, solo de bits. Tu etiqueta recibe dos
+    planos de 1 bit por píxel, uno detrás de otro: en el primero un <code>1</code> es blanco y un
+    <code>0</code> es tinta; en el segundo un <code>1</code> es rojo. Un punto rojo es, por tanto,
+    <code>0</code> en el primer plano y <code>1</code> en el segundo. Las filas van de arriba abajo y
+    cada byte guarda ocho píxeles seguidos, con el de la izquierda en el bit más alto. En la vista
+    <b>Datos</b>, encima de la etiqueta, puedes recorrer así los bytes de tu imagen, fila a fila:</p>
+    <div class="bits">
+      <div>
+        <div class="pix" id="pix"></div>
+        <div class="pixbits" id="pixbits" style="margin-top:6px"></div>
+      </div>
+      <span class="arrow">→</span>
+      <div class="byte"><b id="byteval">0x00</b><span class="dim">un byte del plano blanco/negro</span></div>
+    </div>
+    <div class="figs">
+      <div class="fig"><div class="n" data-live="plane">15 000</div><div class="l">bytes por plano</div></div>
+      <div class="fig"><div class="n" data-live="planes">2</div><div class="l">planos</div></div>
+      <div class="fig"><div class="n" data-live="total">30 000</div><div class="l">bytes en total</div></div>
+    </div>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Encontrar la etiqueta: el anuncio</h3>
+    <p>La etiqueta pasa casi todo el tiempo dormida. Cada poco enciende la radio un instante,
+    emite un <b>anuncio</b> y vuelve a dormir; por eso al escanear aparece y desaparece. En ese
+    anuncio va un bloque de <b>datos de fabricante</b> con el identificador <code>0x5053</code> y
+    cinco bytes que dicen qué es y cómo está. Los de <span id="advwho">una etiqueta como la tuya</span>:</p>
+    <div class="adv">
+      <div><code id="adv0">4b</code><div class="l">modelo, parte baja</div><div class="v" id="advm">0x004B</div></div>
+      <div><code id="adv1">1e</code><div class="l">voltaje en décimas</div><div class="v" id="advv">3,0 V</div></div>
+      <div><code id="adv2">81 01</code><div class="l">firmware</div><div class="v" id="advf">0x8101</div></div>
+      <div><code id="adv4">40</code><div class="l">modelo, parte alta</div><div class="v" id="advh">hardware 0x404B</div></div>
+    </div>
+    <p>El modelo sale de unir el primer y el último byte y quedarse con 14 bits:
+    <span id="advmodel">0x004B, un EPD 4.2" blanco, negro y rojo de 400 × 300</span>. Con eso el
+    programa sabe el tamaño exacto del panel y cómo empaquetar la imagen.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Conexión y servicios</h3>
+    <p>Este programa, que hace de <i>central</i>, espera uno de esos anuncios y responde en ese
+    mismo hueco con una petición de conexión. Ya conectados, recorre la tabla <b>GATT</b> de la
+    etiqueta y busca el servicio <code>fef0</code>. Dentro hay dos características que importan:
+    por <code>fef1</code> van las órdenes y vuelven las respuestas, que la etiqueta envía como
+    <i>notificaciones</i>; por <code>fef2</code> van los datos de la imagen.</p>
+    <p>Antes se negocia el <b>MTU</b>, el tamaño máximo de cada mensaje. Si no se negocia, es de 23
+    bytes, y aquí no bastaría: cada bloque mide <span class="mono" data-live="pkt">244</span> bytes más
+    3 de cabecera, así que hace falta un MTU de al menos <span class="mono" data-live="minmtu">247</span>.
+    BlueZ lo negocia solo al conectar.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Tres órdenes para empezar</h3>
+    <p>Todas se escriben en <code>fef1</code> sin pedir acuse de recibo del protocolo: la respuesta
+    llega como notificación, y el programa no envía la siguiente hasta recibirla.</p>
+    <div class="talk">
+      <div class="row head"><span class="what">Envía</span><span class="what">Responde la etiqueta</span><span class="what">Significa</span></div>
+      <div class="row"><span class="send">01</span><span class="back">01 f4 00</span><span class="what">¿Lista para recibir? Sí.</span></div>
+      <div class="row"><span class="send" data-live="sizehex">02 30 75 00 00 00 00 00</span><span class="back">02 …</span>
+        <span class="what">Van <span data-live="total">30 000</span> bytes (tamaño en 4 bytes, del menos al más significativo).</span></div>
+      <div class="row"><span class="send">03</span><span class="back">05 00 00 00 00 00</span><span class="what">Empieza. Pide el bloque 0.</span></div>
+    </div>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>La imagen, bloque a bloque</h3>
+    <p>La imagen se trocea en bloques de <span class="mono" data-live="block">240</span> bytes. Cada uno
+    se escribe en <code>fef2</code> precedido de su número en 4 bytes, y la etiqueta contesta por
+    <code>fef1</code> con <code>05 00</code> y el número del bloque que quiere a continuación. Es ella
+    quien lleva el ritmo: si un bloque le llega mal, vuelve a pedir el mismo número y el programa lo
+    repite. Cuando pide uno que ya está más allá del final, la imagen está completa. Los primeros de
+    tu imagen, con sus bytes reales:</p>
+    <div class="packets" id="packets"></div>
+    <div class="figs">
+      <div class="fig"><div class="n" data-live="packets">125</div><div class="l">bloques</div></div>
+      <div class="fig"><div class="n" data-live="airtime">3,8 s</div><div class="l">transmitiendo, aprox.</div></div>
+    </div>
+    <p class="note">La estimación supone unos 30 ms por bloque: una escritura y una notificación de
+    vuelta, cada una en su evento de conexión. Lo que más tarda casi siempre es lo anterior, esperar
+    el anuncio y conectar.</p>
+  </div></article>
+
+  <article class="step"><div>
+    <h3>Refresco y vuelta a dormir</h3>
+    <p>Con el búfer completo, el programa se desconecta y la etiqueta refresca el panel: aplica una
+    secuencia de voltajes que primero limpia lo anterior (el parpadeo blanco y negro) y después
+    fija los pigmentos. El rojo es el más lento en moverse, así que en paneles con rojo lleva del
+    orden de <b>15 segundos</b>.</p>
+    <p>Después vuelve a dormir y la imagen se queda fija sin consumir nada: el e-paper solo gasta
+    al cambiar. Por eso una pila de botón dura años y por eso el programa te avisa si intentas
+    enviar la misma imagen que la etiqueta ya muestra.</p>
+  </div></article>
+</div>
